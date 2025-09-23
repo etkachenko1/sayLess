@@ -1,4 +1,5 @@
 package com.sayless.auth.security;
+
 //Utility service for handling JWT tokens.
 // simple for now, will increase security later
 
