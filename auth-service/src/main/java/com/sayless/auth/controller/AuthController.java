@@ -12,7 +12,7 @@ import java.util.Map; //to read JSON request bodies as key-value pairs
 
 @RestController //tells SpringBoot that this class handles HTTP requests and will return JSON and HTML
 @RequestMapping("/auth")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 public class AuthController {
 
     @Autowired private UserRepository userRepo;
@@ -28,9 +28,8 @@ public class AuthController {
         String password  = body.get("password");
 
         //check if the user already exists
-        if(userRepo.existsByUsername(username)) return ResponseEntity.badRequest().body("This username is already taken.");
-        if(userRepo.existsByEmail(email)) return ResponseEntity.badRequest().body("This email is already taken.");
-
+        if(userRepo.existsByUsername(username)) return ResponseEntity.badRequest().body(Map.of("error", "This username is already taken."));
+        if(userRepo.existsByEmail(email)) return ResponseEntity.badRequest().body(Map.of("error", "This email is already taken."));
         //Proceed if not:
         User u = new User(username, email, passwordEncoder.encode(password));
         userRepo.save(u);
@@ -46,9 +45,9 @@ public class AuthController {
         String password  = body.get("password");
 
         var query = userRepo.findByUsername(username);
-        if(query.isEmpty()) return ResponseEntity.status(401).body("This username does not exist");
+        if(query.isEmpty()) return ResponseEntity.status(401).body(Map.of("error","This username does not exist" ));
         User u = query.get();
-        if(!passwordEncoder.matches(password, u.getPassword())) return ResponseEntity.status(401).body("Invalid credentials");
+        if(!passwordEncoder.matches(password, u.getPassword())) return ResponseEntity.status(401).body(Map.of("error","Invalid credentials"));
 
         String token = jwtUtil.generateToken(u.getId());
         return ResponseEntity.ok(Map.of("token", token));
