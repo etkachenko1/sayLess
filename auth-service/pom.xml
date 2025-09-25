@@ -18,6 +18,10 @@
     </properties>
 
 	<dependencies>
+	        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
     <!-- Web server and REST API -->
 	<dependency>
 		<groupId>org.springframework.boot</groupId>
@@ -31,11 +35,23 @@
     </dependency>
 
     <!-- JWT -->
-    <dependency>
-        <groupId>io.jsonwebtoken</groupId>
-        <artifactId>jjwt</artifactId>
-        <version>0.9.1</version>
-    </dependency>
+	<dependency>
+  		<groupId>io.jsonwebtoken</groupId>
+  		<artifactId>jjwt-api</artifactId>
+  		<version>0.11.5</version>
+	</dependency>
+	<dependency>
+  		<groupId>io.jsonwebtoken</groupId>
+  		<artifactId>jjwt-impl</artifactId>
+  		<version>0.11.5</version>
+  		<scope>runtime</scope>
+	</dependency>
+	<dependency>
+  		<groupId>io.jsonwebtoken</groupId>
+  		<artifactId>jjwt-jackson</artifactId> <!-- for JSON serialization -->
+  		<version>0.11.5</version>
+  		<scope>runtime</scope>
+	</dependency>
 
     <!-- Security Dependency for password hashing -->
     <dependency>
