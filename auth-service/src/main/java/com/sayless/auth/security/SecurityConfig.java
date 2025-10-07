@@ -18,6 +18,7 @@ public class SecurityConfig {
             // Authorization rules
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll() // allow public access to /auth/*
+                .requestMatchers("/users/**").permitAll()
                 .anyRequest().authenticated()
             )
             // Disable default login form
