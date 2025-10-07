@@ -38,8 +38,10 @@ function Auth() {
         setLoginForm((prev) => ({...prev,[name]:value})) // copies previous state, replaces the fiels matvhing the input's name
     }
 
+    const [successMessage, setSuccessMessage] = useState<string>("");
     const register = async () => {
         setError("")
+        setSuccessMessage("");
         try {
             //send HTTP Post requesr to backend
             const res = await fetch("http://localhost:8081/auth/register", {
@@ -61,8 +63,12 @@ function Auth() {
               }
                 return
             }
-            alert(data.message || "Registered Successfully!")
-            setMode("login")
+
+            setSuccessMessage("Succesfully registered! You can now sign in.")
+            setTimeout(() => {
+              setMode("login");
+              setSuccessMessage("");
+            }, 2000);
         }
         catch(err) {
             console.error("Register error:", err)
@@ -147,6 +153,11 @@ function Auth() {
             {error}
           </div>
         )}
+        {successMessage && (
+          <div className="mb-4 p-2 text-sm text-green-400 bg-green-900/30 border border-green-700 rounded text-center">
+            {successMessage}
+          </div>
+        )}        
 
         {/* Login Form */}
         {mode === "login" && (
