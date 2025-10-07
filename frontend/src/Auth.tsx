@@ -25,7 +25,6 @@ function Auth() {
         username:"",
         password: "",
     })
-    const [token, setToken] = useState<string>("")
     const [error, setError] = useState<string>("")
 
     const handleChangeRegister = (e: ChangeEvent<HTMLInputElement>) =>{
@@ -77,8 +76,8 @@ function Auth() {
             }
             //check if backend returned a JWT token
             if(data.token) {
-                setToken(data.token) //store token  token in component state
-                localStorage.setItem("token", data.token) //token persistamnce
+                localStorage.setItem("token", data.token) 
+                window.location.href = "/dashboard"
             } else {
                 setError("Invalid username or password")
             }
@@ -188,14 +187,6 @@ function Auth() {
               Sign Up
             </button>
           </>
-        )}
-
-        {/* Show JWT token */}
-        {token && (
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <h3 className="font-bold text-sm text-red-600">JWT Token:</h3>
-            <p className="text-xs break-all text-gray-700">{token}</p>
-          </div>
         )}
       </div>
     </div>
