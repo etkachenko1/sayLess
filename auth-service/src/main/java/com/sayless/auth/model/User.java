@@ -3,12 +3,15 @@ package com.sayless.auth.model;
 
 // classes from the Spring Data MongoDB library
 import org.springframework.data.annotation.Id; //mark primary key
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document; //to map this class to a MongoDB collection
 
-@Document("users")
+@Document(collection = "users")
 public class User {
     @Id
     private String id;
+
+    @Indexed(unique = true)
     private String username;
     private String email;
     private String password;

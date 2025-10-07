@@ -53,5 +53,11 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("token", token));
         
     }
+
+    @GetMapping("/check-username/{username}")
+    public ResponseEntity<?> checkUsername(@PathVariable String username) {
+        boolean exists = userRepo.existsByUsername(username);
+        return ResponseEntity.ok(Map.of("available", !exists));
+    }
     
 }

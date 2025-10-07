@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import { useState } from "react"
 import type { ChangeEvent } from "react"
 import logo from "./assets/sayless-logo.png"
 
@@ -25,6 +25,8 @@ function Auth() {
         username:"",
         password: "",
     })
+
+    const[usernameAvailable, setUsernameAvailable] = useState<boolean|null>(null)
     const [error, setError] = useState<string>("")
 
     const handleChangeRegister = (e: ChangeEvent<HTMLInputElement>) =>{
@@ -48,7 +50,15 @@ function Auth() {
             const data = await res.json().catch(() => ({})) //parses the response body from the backend into JS object
 
             if(!res.ok) {
+              if(data.error === "This username is already taken.") {
+                setError("That username is already taken. Try another one.")
+              }
+              else if( data.error === "This email is already taken.") {
+                setError("That email is already registered. Try logging instead.")
+              } else {
                 setError(data.error || "Registration Failed")
+
+              }
                 return
             }
             alert(data.message || "Registered Successfully!")
@@ -88,6 +98,16 @@ function Auth() {
         }
     }
 
+    const checkUsername = async (username: string) => {
+      if(!username) return
+      try {
+        const res = await fetch(`http://localhost:8081/auth/check-username/${username}`)
+        const data = await res.json()
+        setUsernameAvailable(data.available)
+      } catch (e) {
+        console.error("Username check failed: ", e)
+      }
+    }
     
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -163,8 +183,13 @@ function Auth() {
               placeholder="Username"
               value={registerForm.username}
               onChange={handleChangeRegister}
+              onBlur={() => checkUsername(registerForm.username)}
               className="w-full p-3 mb-3 border rounded-lg focus:ring-2 focus:ring-red-400"
             />
+
+            {usernameAvailable ==false &&(<p className="text-xs text-red-600 mt-1 mb-2 leading-tight">That username is already taken</p>)}
+            {usernameAvailable ==true &&(<p className="text-xs text-green-600 mt-1 mb-2 leading-tight">That username is available</p>)}
+
             <input
               name="email"
               placeholder="Email"
