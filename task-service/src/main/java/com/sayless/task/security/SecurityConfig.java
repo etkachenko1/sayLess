@@ -3,7 +3,6 @@ package com.sayless.task.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod; 
-import org.springframework.security.config.Customizer; 
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity; 
 import org.springframework.security.web.SecurityFilterChain; 
 import org.springframework.security.config.annotation.web.builders.HttpSecurity; 
@@ -21,7 +20,7 @@ public class SecurityConfig {
                 CorsConfiguration c = new CorsConfiguration();
                 c.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
                 c.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-                c.setAllowedCredentials(true);
+                c.setAllowCredentials(true);
                 return c;
 
             })).formLogin(form->form.disable()).httpBasic(basic->basic.disable())
