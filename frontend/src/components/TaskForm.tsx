@@ -26,38 +26,38 @@ export default function TaskForm({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
       <div className="flex flex-col">
-        <label className="text-sm font-medium mb-1">Title</label>
+        <label className="text-sm font-medium mb-1 text-gray-300">Title</label>
       <input
         value={title}
         onChange={(e) => onTitleChange(e.target.value)}
         placeholder="Task title"
-        className="border rounded-lg p-3"
+        className="border border-gray-600 bg-gray-700 text-white rounded-lg p-3 focus: ring-red-500"
       />
       </div>
       <div className="flex flex-col">
-      <label className="text-sm font-medium mb-1">Assign to</label>
+      <label className="text-sm font-medium mb-1 text-gray-300">Assign to</label>
       <input
         value={assignedTo}
         onChange={(e) => onAssignedToChange(e.target.value)}
         placeholder="Assign to (friends dropdown)"
-        className="border rounded-lg p-3"
+        className="border border-gray-600 bg-gray-700 text-grey-400 rounded-lg p-3"
         disabled
       />
       </div>
       <div className="flex flex-col col-span-2">
-        <label className="text-sm font-medium mb-1">Description</label>
+        <label className="text-sm font-medium mb-1 text-gray-300">Description</label>
         <input
         value={description}
         onChange={(e) => onDescriptionChange(e.target.value)}
         placeholder="Description"
-        className="border rounded-lg p-3 col-span-2"
+        className="border border-gray-600 bg-gray-700 text-white rounded-lg p-3"
       />
       </div>
        {/* Deadline (Date) */}
       <div className="flex flex-col col-span-2">
-        <label className="text-sm font-medium mb-1">Deadline</label>
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="border rounded-lg p-2 bg-gray-50 flex-1">
+        <label className="text-sm font-medium mb-1 text-gray-300">Deadline</label>
+        <div className="flex flex-col sm:flex-row items-stretch gap-3">
+          <div className="flex-1 relative">
             <Datepicker
               onChange={(date: Date | null) => {
                 if (date) {
@@ -69,26 +69,28 @@ export default function TaskForm({
               language="en"
               labelTodayButton="Today"
               labelClearButton="Clear"
+              className="[&_input]:bg-gray-700 [&_input]:text-white [&_input]:border-gray-600 [&_input]:rounded-lg [&_input]:h-[48px] [&_input]:focus:ring-red-500 [&_input]:focus:border-red-500 [&_button]:text-gray-300"
+
             />
           </div>
 
           {/* Time input */}
           <input
             type="time"
-            value={deadline ? new Date(deadline).toTimeString().slice(0, 5) : ""}
+            value={deadline ? new Date(deadline).toTimeString().slice(0, 5) : "23:59"}
             onChange={(e) => {
               const [hours, minutes] = e.target.value.split(":");
               const newDate = deadline ? new Date(deadline) : new Date();
               newDate.setHours(parseInt(hours), parseInt(minutes));
               onDeadlineChange(newDate.toISOString());
             }}
-            className="border rounded-lg p-3 bg-gray-50 focus:ring-2 focus:ring-red-400 w-40"
+            className="border border-gray-600 bg-gray-700 text-white rounded-lg p-3 h-[48px] focus:ring-2 focus:ring-red-400 w-40"
           />
         </div>
 
         {deadline && (
           <p className="text-xs text-gray-500 mt-2">
-            Deadline:{" "}
+            Selected:{" "}
             {new Date(deadline).toLocaleString(undefined, {
               dateStyle: "medium",
               timeStyle: "short",
@@ -99,7 +101,7 @@ export default function TaskForm({
 
       <button
         onClick={onSubmit}
-        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 col-span-2"
+        className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-600 col-span-2"
       >
         Create Task
       </button>

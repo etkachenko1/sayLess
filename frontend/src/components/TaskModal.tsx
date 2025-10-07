@@ -31,8 +31,8 @@ export default function TaskModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">
-        <h2 className="text-xl font-bold mb-4 text-center text-red-600">Create New Task</h2>
+      <div className="bg-gray-800 rounded-xl shadow-lg w-full max-w-lg p-6">
+        <h2 className="text-xl font-bold mb-4 text-center text-red-700">Create New Task</h2>
         <TaskForm
           title={title}
           description={description}

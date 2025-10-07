@@ -82,7 +82,7 @@ export default function Dashboard(){
 
 
     return (
-         <div className="min-h-screen flex flex-col bg-gray-100">
+         <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
       <Navbar onCreateTaskClick= {() => setShowTaskModal(true)}/>
       <div className="flex flex-1 p-6 space-x-6">
         <Sidebar 
@@ -90,7 +90,7 @@ export default function Dashboard(){
         bio = {user?.bio}
         profilePic = {user?.profilePic} 
         onEditProfile={() => {}}/>
-        <main className="flex-1 bg-white p-6 rounded-2xl shadow-md">
+        <main className="flex-1 bg-gray-800 p-6 rounded-2xl shadow-lg">
           <TaskList
             tasks={tasks}
             loading={loading}

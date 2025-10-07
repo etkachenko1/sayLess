@@ -8,15 +8,15 @@ interface SidebarProps {
 
 export default function Sidebar({ username, bio, profilePic, onEditProfile }: SidebarProps) {
   return (
-    <aside className="bg-white shadow rounded-xl p-6 w-64 flex flex-col items-center">
+    <aside className="bg-gray-800 shadow-lg rounded-xl p-6 w-64 flex flex-col items-center">
         <img
           src={profilePic || defaultPfp}
           alt="profile"
-          className="w-24 h-24 rounded-full mb-3"
+          className="w-24 h-24 rounded-full mb-3 border-gray-600"
         />
         <h2 className="text-lg font-semibold">{username}</h2>
-        {bio && <p className="text-sm text-gray-500 text-center mt-1">{bio}</p>}
-        <button onClick={onEditProfile} className="mt-4 text-sm bg-gray-200 text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-300"> Edit Profile</button>
+        {bio && <p className="text-sm text-gray-400 text-center mt-1">{bio}</p>}
+        <button onClick={onEditProfile} className="mt-4 text-sm bg-gray-700 text-gray-200 px-3 py-1 rounded-lg hover:bg-gray-600"> Edit Profile</button>
     </aside>
   );
 }
