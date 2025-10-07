@@ -7,6 +7,14 @@
 *.nar
 *.ear
 
+/task-service/target/
+*.class
+*.log
+*.jar
+*.war
+*.nar
+*.ear
+
 # === Node / React ===
 /frontend/node_modules/
 /frontend/build/
