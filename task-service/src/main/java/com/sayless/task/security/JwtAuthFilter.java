@@ -46,7 +46,7 @@ public class JwtAuthFilter extends OncePerRequestFilter{
         @NonNull FilterChain chain) throws ServletException, IOException {
 
         // look for the Authorization header in the incoming request
-        String auth = req.getHeader(java.net.http.HttpHeaders.AUTHORIZATON);
+        String auth = req.getHeader(HttpHeaders.AUTHORIZATION);
         //if header exists and starts with "Bearer ", extract the token part
         if(auth!= null && auth.startsWith("Bearer ")) {
             String token = auth.substring(7);//remove bearer prefix
