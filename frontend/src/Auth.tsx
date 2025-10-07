@@ -110,8 +110,8 @@ function Auth() {
     }
     
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8">
+    <div className="flex items-center justify-center min-h-screen bg-gray-900">
+      <div className="w-full max-w-md bg-gray-800 rounded-2xl shadow-md p-8 border-gray-700">
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <img src={logo} alt="SayLess logo" className="h-20" />
@@ -121,20 +121,20 @@ function Auth() {
         <div className="flex justify-center mb-6">
           <button
             onClick={() => setMode("login")}
-            className={`px-4 py-2 rounded-l-lg font-semibold ${
+            className={`px-4 py-2 rounded-l-lg font-semibold transition ${
               mode === "login"
-                ? "bg-red-500 text-white"
-                : "bg-gray-200 text-gray-700"
+                ? "bg-red-700 text-white"
+                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
             }`}
           >
             Sign In
           </button>
           <button
             onClick={() => setMode("register")}
-            className={`px-4 py-2 rounded-r-lg font-semibold ${
+            className={`px-4 py-2 rounded-r-lg font-semibold transition ${
               mode === "register"
-                ? "bg-red-500 text-white"
-                : "bg-gray-200 text-gray-700"
+                ? "bg-red-700 text-white"
+                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
             }`}
           >
             Sign Up
@@ -143,7 +143,7 @@ function Auth() {
 
         {/* Error message */}
         {error && (
-          <div className="mb-4 p-2 text-sm text-red-700 bg-red-100 rounded">
+          <div className="mb-4 p-2 text-sm text-red-400 bg-red-900/30 border border-red-700 rounded">
             {error}
           </div>
         )}
@@ -156,7 +156,7 @@ function Auth() {
               placeholder="Username"
               value={loginForm.username}
               onChange={handleChangeLogin}
-              className="w-full p-3 mb-3 border rounded-lg focus:ring-2 focus:ring-red-400"
+              className="w-full p-3 mb-3 border border-gray-600 bg-gray-700 rounded-lg focus:ring-2 focus:ring-red-700 text-white placeholder-gray-400"
             />
             <input
               name="password"
@@ -164,11 +164,11 @@ function Auth() {
               placeholder="Password"
               value={loginForm.password}
               onChange={handleChangeLogin}
-              className="w-full p-3 mb-4 border rounded-lg focus:ring-2 focus:ring-red-400"
+              className="w-full p-3 mb-4 border border-gray-600 bg-gray-700 rounded-lg focus:ring-2 focus:ring-red-700 text-white placeholder-gray-400"
             />
             <button
               onClick={login}
-              className="w-full bg-red-500 text-white py-2 rounded-lg font-semibold hover:bg-red-600 transition"
+              className="w-full bg-red-700 hover:bg-red-600 text-white py-2 rounded-lg font-semibold transition"
             >
               Sign In
             </button>
@@ -184,18 +184,18 @@ function Auth() {
               value={registerForm.username}
               onChange={handleChangeRegister}
               onBlur={() => checkUsername(registerForm.username)}
-              className="w-full p-3 mb-3 border rounded-lg focus:ring-2 focus:ring-red-400"
+              className="w-full p-3 mb-3 border border-gray-600 bg-gray-700 rounded-lg focus:ring-2 focus:ring-red-700 text-white placeholder-gray-400"
             />
 
-            {usernameAvailable ==false &&(<p className="text-xs text-red-600 mt-1 mb-2 leading-tight">That username is already taken</p>)}
-            {usernameAvailable ==true &&(<p className="text-xs text-green-600 mt-1 mb-2 leading-tight">That username is available</p>)}
+            {usernameAvailable ==false &&(<p className="text-xs text-red-400 mt-1 mb-2 leading-tight">That username is already taken</p>)}
+            {usernameAvailable ==true &&(<p className="text-xs text-green-400 mt-1 mb-2 leading-tight">That username is available</p>)}
 
             <input
               name="email"
               placeholder="Email"
               value={registerForm.email}
               onChange={handleChangeRegister}
-              className="w-full p-3 mb-3 border rounded-lg focus:ring-2 focus:ring-red-400"
+              className="w-full p-3 mb-3 border border-gray-600 bg-gray-700 rounded-lg focus:ring-2 focus:ring-red-700 text-white placeholder-gray-400"
             />
             <input
               name="password"
@@ -203,11 +203,11 @@ function Auth() {
               placeholder="Password"
               value={registerForm.password}
               onChange={handleChangeRegister}
-              className="w-full p-3 mb-4 border rounded-lg focus:ring-2 focus:ring-red-400"
+              className="w-full p-3 mb-4 border border-gray-600 bg-gray-700 rounded-lg focus:ring-2 focus:ring-red-700 text-white placeholder-gray-400"
             />
             <button
               onClick={register}
-              className="w-full bg-red-500 text-white py-2 rounded-lg font-semibold hover:bg-red-600 transition"
+              className="w-full bg-red-700 hover:bg-red-600 text-white py-2 rounded-lg font-semibold transition"
             >
               Sign Up
             </button>
