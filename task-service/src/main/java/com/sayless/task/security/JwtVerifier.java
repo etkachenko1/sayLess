@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 // helper for parsing and validating JWT tokens
 
 @Component
-public class JwtVerify {
+public class JwtVerifier {
     private final Key key;
 
     //constructor to read from app.props or .env in future, converts it to a Key object using Keys.hmacShaKeyFor
