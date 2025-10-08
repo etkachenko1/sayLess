@@ -1,6 +1,8 @@
 package com.sayless.task.controller;
 
+import com.sayless.task.client.UserClient;
 import com.sayless.task.dto.TaskCreateDto;
+import com.sayless.task.dto.TaskResponseDto;
 import com.sayless.task.dto.TaskUpdateDto;
 import com.sayless.task.dto.StatusUpdateDto;
 import com.sayless.task.model.Task;
@@ -22,9 +24,11 @@ import java.util.List;
 public class TaskController {
     //MongoDb repo for Task collection
     private final TaskRepository repo;
+    private final UserClient userClient;
  
-    public TaskController(TaskRepository repo) {
+    public TaskController(TaskRepository repo, UserClient userClient) {
         this.repo = repo;
+        this.userClient = userClient;
     }
 
     //helper to exctract userId stored as principal in jwtAuthFilter from token
@@ -34,10 +38,25 @@ public class TaskController {
 
     //GET //tasks -> all tasks createdby or assignedTo user
     @GetMapping
-    public List<Task> getAllTasks(Authentication auth) {
+    public List<TaskResponseDto> getAllTasks(Authentication auth) {
         String me = uid(auth);
-        return repo.findByCreatedByOrAssignedTo(me, me);
-    }
+        var tasks= repo.findByCreatedByOrAssignedTo(me, me);
+        return tasks.stream().map(t -> {
+            String createdByName = userClient.getUsername(t.getCreatedBy());
+            String assignedToName = userClient.getUsername(t.getAssignedTo());
+            return new TaskResponseDto(
+                t.getId(),
+                t.getTitle(),
+                t.getDescription(),
+                t.getStatus().name(),
+                t.getDeadline(),
+                t.getCreatedBy(),
+                createdByName,
+                t.getAssignedTo(),
+                assignedToName
+            );
+        }).toList();
+        }
 
     @GetMapping("/assigned-to-me")
     public List<Task> getTasksAssignedToMe(Authentication auth){
@@ -45,7 +64,7 @@ public class TaskController {
         return repo.findByAssignedTo(me);
     }
 
-    @GetMapping("/assitgned-by-me")
+    @GetMapping("/assigned-by-me")
     public List<Task> getTasksAssignedByMe(Authentication auth){
         String me = uid(auth);
         return repo.findByCreatedBy(me);

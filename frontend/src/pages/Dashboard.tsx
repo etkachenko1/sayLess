@@ -10,8 +10,11 @@ interface Task {
     title: string
     description: string
     status: string
-    assignedTo: string
-    createdBy: string
+    deadline: string
+    assignedToId: string
+    createdById: string
+    createdByName: string
+    assignedToName: string
 }
 
 const API = "http://localhost:8082"
