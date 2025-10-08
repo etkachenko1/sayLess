@@ -122,7 +122,13 @@ export default function Dashboard(){
 
     return (
          <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
-      <Navbar onCreateTaskClick= {() => setShowTaskModal(true)}/>
+      <Navbar onCreateTaskClick= {() => {
+        setEditingTask(null);
+        setTitle('');
+        setDescription('');
+        setAssignedTo(user?.username || '');
+        setDeadline(new Date(new Date().setHours(23,59,0,0)).toISOString());
+        setShowTaskModal(true)}}/>
       <div className="flex flex-1 p-6 space-x-6">
         <Sidebar 
         username={user?.username || "User"}
@@ -159,6 +165,7 @@ export default function Dashboard(){
       onAssignedToChange={setAssignedTo}
       onDeadlineChange={setDeadline}
       onSubmit={editingTask? updateTask : createTask}
+      isEditing = {!!editingTask}
       />
     </div>
   );

@@ -12,6 +12,7 @@ interface TaskModalProps {
   onAssignedToChange: (v: string) => void;
   onDeadlineChange: (v: string) => void;
   onSubmit: () => Promise<boolean>;
+  isEditing?:boolean;
 }
 
 export default function TaskModal({
@@ -26,6 +27,7 @@ export default function TaskModal({
   onAssignedToChange,
   onDeadlineChange,
   onSubmit,
+  isEditing = false,
 }: TaskModalProps) {
   if (!isOpen) return null;
 
@@ -33,7 +35,7 @@ export default function TaskModal({
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-gray-800 rounded-xl shadow-lg w-full max-w-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-center text-red-700">
-          {title ? "Edit Task" : "Create New Task" } </h2>
+          {isEditing ? "Edit Task" : "Create New Task" } </h2>
         <TaskForm
           title={title}
           description={description}
@@ -48,7 +50,7 @@ export default function TaskModal({
             if (success) onClose();
             return success;
           }}
-          isEditing={!!title}
+          isEditing={isEditing}
         />
         <div className="text-center">
           <button
