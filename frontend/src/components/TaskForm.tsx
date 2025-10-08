@@ -53,7 +53,6 @@ export default function TaskForm({
         className="border border-gray-600 bg-gray-700 text-white rounded-lg p-3"
       />
       </div>
-       {/* Deadline (Date) */}
       <div className="flex flex-col col-span-2">
         <label className="text-sm font-medium mb-1 text-gray-300">Deadline</label>
         <div className="flex flex-col sm:flex-row items-stretch gap-3">
@@ -61,8 +60,12 @@ export default function TaskForm({
             <Datepicker
               onChange={(date: Date | null) => {
                 if (date) {
-                  const current = deadline ? new Date(deadline) : new Date();
-                  date.setHours(current.getHours(), current.getMinutes());
+                  const current = deadline ? new Date(deadline) : null;
+                  if(current) {
+                    date.setHours(current.getHours(), current.getMinutes(), 0, 0);
+                  } else {
+                    date.setHours(23,59,0,0);
+                  }
                   onDeadlineChange(date.toISOString());
                 }
               }}
@@ -73,15 +76,13 @@ export default function TaskForm({
 
             />
           </div>
-
-          {/* Time input */}
           <input
             type="time"
             value={deadline ? new Date(deadline).toTimeString().slice(0, 5) : "23:59"}
             onChange={(e) => {
               const [hours, minutes] = e.target.value.split(":");
               const newDate = deadline ? new Date(deadline) : new Date();
-              newDate.setHours(parseInt(hours), parseInt(minutes));
+              newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
               onDeadlineChange(newDate.toISOString());
             }}
             className="border border-gray-600 bg-gray-700 text-white rounded-lg p-3 h-[48px] focus:ring-2 focus:ring-red-400 w-40"
