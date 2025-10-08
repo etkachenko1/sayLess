@@ -70,9 +70,8 @@ public class JwtAuthFilter extends OncePerRequestFilter{
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
             }
-            catch (Exception ignored) {
-                //invalid or expired token
-                //nothing for now
+            catch (Exception e) {
+                System.out.println("Jwt verification failed: " + e.getMessage());
             }
         }
         //continue down the filter chain
