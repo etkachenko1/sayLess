@@ -28,6 +28,7 @@ export default function Dashboard(){
     const [showTaskModal, setShowTaskModal] = useState(false);
     const [assignedTo, setAssignedTo ] = useState(user?.username || "")
     const [deadline, setDeadline] = useState("")
+    const [editingTask, setEditingTask] = useState<Task | null> (null);
     const token = localStorage.getItem("token")
 
     const headers = {
@@ -70,11 +71,40 @@ export default function Dashboard(){
         
     };
 
-    const markDone = async ( id: string) => {
+    const updateTask = async(): Promise<boolean> => {
+        if(!editingTask) return false;
+
+        const res= await fetch(`${API}/tasks/${editingTask.id}`, {
+            method: "PUT",
+            headers,
+            body: JSON.stringify({
+                title,
+                description,
+                deadline,
+                assignedTo: assignedTo || null,
+
+            })
+        })
+        if(res.ok) {
+            await fetchTasks();
+            setEditingTask(null);
+            setShowTaskModal(false);
+            setTitle("");
+            setDescription("");
+            setDeadline("");
+            return true;
+        } else {
+            console.error("Task update failed", res.statusText);
+            return false;
+        }
+    }
+
+    const markDone = async ( id: string, currentStatus: string) => {
+        const newStatus = currentStatus === "DONE" ? "TODO": "DONE";
         await fetch (`${API}/tasks/${id}/status`, {
             method: "PATCH",
             headers,
-            body: JSON.stringify({status: "DONE"}),
+            body: JSON.stringify({status: newStatus}),
         })
         fetchTasks()
     }
@@ -103,15 +133,23 @@ export default function Dashboard(){
           <TaskList
             tasks={tasks}
             loading={loading}
-            onMarkDone={markDone}
+            onToggleStatus={markDone}
             onDelete={deleteTask}
+            onEdit = {(task) => {
+                setEditingTask(task);
+                setTitle(task.title);
+                setDescription(task.description);
+                setDeadline(task.deadline|| "");
+                setAssignedTo(task.assignedToName);
+                setShowTaskModal(true);
+            }}
           />
         </main>
       </div>
 
       <TaskModal 
       isOpen = {showTaskModal}
-      onClose ={() =>setShowTaskModal(false)}
+      onClose ={() => {setShowTaskModal(false); setEditingTask(null);}}
       title = {title}
       description= {description}
       assignedTo={assignedTo}
@@ -120,7 +158,7 @@ export default function Dashboard(){
       onDescriptionChange={setDescription}
       onAssignedToChange={setAssignedTo}
       onDeadlineChange={setDeadline}
-      onSubmit={createTask}
+      onSubmit={editingTask? updateTask : createTask}
       />
     </div>
   );

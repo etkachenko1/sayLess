@@ -1,4 +1,4 @@
-import {CheckCircle, Trash2, CalendarDays, User, Clock} from "lucide-react"
+import {CheckCircle, Trash2, CalendarDays, User, Clock, Edit2} from "lucide-react"
 interface Task {
   id: string;
   title: string;
@@ -14,15 +14,17 @@ interface Task {
 interface TaskListProps {
   tasks: Task[];
   loading: boolean;
-  onMarkDone: (id: string) => void;
+  onToggleStatus: (id: string, status: string) =>void;
   onDelete: (id: string) => void;
+  onEdit: (task: Task) => void;
 }
 
 export default function TaskList({
   tasks,
   loading,
-  onMarkDone,
+  onToggleStatus,
   onDelete,
+  onEdit,
 }: TaskListProps) {
   if (loading) return (<div className="text-center text-gray-400 animate-pulse py-6">Loading tasks...</div>);
   if (tasks.length === 0) return (<div className="text-center text-gray-500 py-6 italic">No tasks, take a break ☕.</div>);
@@ -130,14 +132,24 @@ return (
 
             {/* Buttons */}
             <div className="flex items-center gap-2 pr-5 pt-5">
-              {t.status !== "DONE" && (
                 <button
-                  onClick={() => onMarkDone(t.id)}
-                  className="flex items-center gap-1 text-sm text-white bg-green-600/90 hover:bg-green-500 transition-colors px-3 py-1.5 rounded-lg shadow-sm"
+                  onClick={() => onToggleStatus(t.id, t.status)}
+                  className={`flex items-center gap-1 text-sm text-white transition-colors px-3 py-1.5 rounded-lg shadow-sm ${
+                      t.status === "DONE"
+                      ? "bg-yellow-600/90 hover:bg-yellow-500"
+                      : "bg-green-600/90 hover:bg-green-500"
+                  }`}
                 >
-                  <CheckCircle className="h-4 w-4" /> Done
+                  <CheckCircle className="h-4 w-4" />{" "}
+                  {t.status === "DONE" ? "Undo" : "Done"}
                 </button>
-              )}
+
+                <button
+                  onClick={() => onEdit(t)}
+                  className="flex items-center gap-1 text-sm text-white bg-blue-600/90 hover:bg-blue-500 transition-colors px-3 py-1.5 rounded-lg shadow-sm"
+                >
+                <Edit2 className="h-4 w-4"/> Edit
+                </button>
               <button
                 onClick={() => onDelete(t.id)}
                 className="flex items-center gap-1 text-sm text-white bg-red-700/90 hover:bg-red-600 transition-colors px-3 py-1.5 rounded-lg shadow-sm"

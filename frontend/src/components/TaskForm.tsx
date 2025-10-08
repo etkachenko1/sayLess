@@ -10,6 +10,7 @@ interface TaskFormProps {
   onAssignedToChange: (v: string) => void
   onDeadlineChange: (v: string) => void
   onSubmit: () => Promise<boolean>
+  isEditing?: boolean
 }
 
 export default function TaskForm({
@@ -22,6 +23,7 @@ export default function TaskForm({
   onAssignedToChange,
   onDeadlineChange,
   onSubmit,
+  isEditing
 }: TaskFormProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
@@ -103,10 +105,11 @@ export default function TaskForm({
       <button
         onClick={() => {onSubmit();
         }}
-        className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-600 col-span-2"
-      >
-        Create Task
-      </button>
+        className={`${ 
+          isEditing ? "bg-blue-700 hover:bg-blue-600" : "bg-red-700 hover:bg-red-600"
+          } text-white px-4 py-2 rounded-lg col-span-2 transition-colors`}
+          > {isEditing ? "Update Task" : "Create Task"}
+        </button>
     </div>
   )
 }
