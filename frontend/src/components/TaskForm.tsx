@@ -9,7 +9,7 @@ interface TaskFormProps {
   onDescriptionChange: (v: string) => void
   onAssignedToChange: (v: string) => void
   onDeadlineChange: (v: string) => void
-  onSubmit: () => void
+  onSubmit: () => Promise<boolean>
 }
 
 export default function TaskForm({
@@ -100,7 +100,8 @@ export default function TaskForm({
       </div>
 
       <button
-        onClick={onSubmit}
+        onClick={() => {onSubmit();
+        }}
         className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-600 col-span-2"
       >
         Create Task

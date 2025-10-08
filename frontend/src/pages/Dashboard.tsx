@@ -46,20 +46,26 @@ export default function Dashboard(){
         setLoading(false)
     }
 
-    const createTask = async () => {
-        if(!title.trim()) return
+    const createTask = async (): Promise<boolean> => {
+        if(!title.trim()) return false;
         const res = await fetch(`${API}/tasks`, {
             method: "POST",
             headers,
-            body: JSON.stringify({title, description, assignedTo, deadline}),
+            body: JSON.stringify({title, description, assignedTo: assignedTo || null, deadline}),
 
-        })
+        });
         if(res.ok){
+            await fetchTasks();
             setTitle("")
             setDescription("")
-            fetchTasks()
+            return true;
         }
-    }
+        else {
+            console.error("Task creation failed: ", res.statusText);
+            return false;
+        }
+        
+    };
 
     const markDone = async ( id: string) => {
         await fetch (`${API}/tasks/${id}/status`, {

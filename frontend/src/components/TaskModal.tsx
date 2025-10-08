@@ -11,7 +11,7 @@ interface TaskModalProps {
   onDescriptionChange: (v: string) => void;
   onAssignedToChange: (v: string) => void;
   onDeadlineChange: (v: string) => void;
-  onSubmit: () => void;
+  onSubmit: () => Promise<boolean>;
 }
 
 export default function TaskModal({
@@ -42,9 +42,10 @@ export default function TaskModal({
           onDescriptionChange={onDescriptionChange}
           onAssignedToChange={onAssignedToChange}
           onDeadlineChange={onDeadlineChange}
-          onSubmit={() => {
-            onSubmit();
-            onClose();
+          onSubmit={async () => {
+            const success = await onSubmit();
+            if (success) onClose();
+            return success;
           }}
         />
         <div className="text-center">
