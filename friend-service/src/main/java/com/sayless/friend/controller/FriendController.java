@@ -1,7 +1,11 @@
 package com.sayless.friend.controller;
 
 import com.sayless.friend.model.Friends;
+import com.sayless.friend.client.UserClient;
 import com.sayless.friend.repository.FriendRepository;
+import com.sayless.friend.dto.FriendDto;
+
+import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +18,15 @@ import java.util.Optional;
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
 public class FriendController {
     private final FriendRepository repo;
+    private final UserClient userClient;
+    private final RestTemplate restTemplate = new RestTemplate();
 
-    public FriendController(FriendRepository repo) {
+
+
+    public FriendController(FriendRepository repo, UserClient userClient) {
         this.repo = repo;
+        this.userClient = userClient;
+
     }
 
     private String uid(Authentication auth) {
@@ -50,9 +60,19 @@ public class FriendController {
     }
 
     @GetMapping
-    public List<Friends> getAll(Authentication auth) {
+    public List<FriendDto> getAll(Authentication auth) {
         String me = uid(auth);
-        return repo.findByRequesterIdOrReceiverId(me, me);
+        List<Friends> all = repo.findByRequesterIdOrReceiverId(me, me);
+    
+        return all.stream().map((Friends f) -> new FriendDto(
+            f.getId(),
+            f.getRequesterId(),
+            userClient.getUsername(f.getRequesterId()),
+            f.getReceiverId(),
+            userClient.getUsername(f.getReceiverId()),
+            f.getStatus().name(),
+            f.getCreatedAt()
+        )).toList();
     }
 
     @DeleteMapping("/remove")
@@ -65,4 +85,16 @@ public class FriendController {
            .ifPresent(repo::delete);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchUsers(@RequestParam String username) {
+    try {
+        // call auth service
+        String url = "http://localhost:8081/users/search?username=" + username;
+        Object[] users = restTemplate.getForObject(url, Object[].class);
+        return ResponseEntity.ok(users);
+    } catch (Exception e) {
+        return ResponseEntity.internalServerError().body("Search failed");
+    }
+}
 }
