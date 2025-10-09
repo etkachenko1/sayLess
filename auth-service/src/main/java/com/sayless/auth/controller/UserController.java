@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
@@ -37,6 +38,17 @@ public class UserController {
 
         repo.save(existing);
         return ResponseEntity.ok(existing);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchUsers(@RequestParam String username) {
+        var results = repo.findByUsernameContainingIgnoreCase(username);
+        return ResponseEntity.ok(
+            results.stream().map(u -> Map.of(
+                "id", u.getId(),
+                "username", u.getUsername()
+            )).toList()
+        );
     }
 
 }
