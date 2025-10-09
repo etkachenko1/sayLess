@@ -1,8 +1,9 @@
 import logo from "../assets/sayless-logo.png"
 interface NavbarProps {
     onCreateTaskClick: () => void;
+    onFriendsClick: () => void;
 }
-export default function Navbar({onCreateTaskClick}:NavbarProps){
+export default function Navbar({onCreateTaskClick, onFriendsClick}:NavbarProps){
 
     const handleLogout = () => {
         localStorage.removeItem("token")
@@ -19,7 +20,7 @@ export default function Navbar({onCreateTaskClick}:NavbarProps){
             <div className="flex space-x-4">
                 <button onClick={onCreateTaskClick} className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-600">
                     Create Task</button>
-                <button className="bg-gray-700 text-gray-200 px-4 py-2 rounded-lg hover: bg-gray-300">
+                <button onClick={onFriendsClick} className="bg-gray-700 text-gray-200 px-4 py-2 rounded-lg hover: bg-gray-300">
                     Friends</button>
                 <button onClick={handleLogout} className="bg-gray-700 text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-600">
                     Logout</button>

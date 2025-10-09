@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/SideBar";
 import TaskList from "../components/TaskList";
 import TaskModal from "../components/TaskModal";
+import FriendsModal from "../components/FriendsModal";
 import { fetchUserProfile } from "../utils/fetchUserProfile"
 import type { UserProfile } from "../utils/fetchUserProfile";
 interface Task {
@@ -29,6 +30,7 @@ export default function Dashboard(){
     const [assignedTo, setAssignedTo ] = useState(user?.username || "")
     const [deadline, setDeadline] = useState("")
     const [editingTask, setEditingTask] = useState<Task | null> (null);
+    const [ShowFriendsModal, setShowFriendsModal] = useState(false);
     const token = localStorage.getItem("token")
 
     const headers = {
@@ -122,13 +124,16 @@ export default function Dashboard(){
 
     return (
          <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
-      <Navbar onCreateTaskClick= {() => {
+      <Navbar 
+      onCreateTaskClick= {() => {
         setEditingTask(null);
         setTitle('');
         setDescription('');
         setAssignedTo(user?.username || '');
         setDeadline(new Date(new Date().setHours(23,59,0,0)).toISOString());
-        setShowTaskModal(true)}}/>
+        setShowTaskModal(true)}}
+        onFriendsClick={()=> setShowFriendsModal(true)}
+        />
       <div className="flex flex-1 p-6 space-x-6">
         <Sidebar 
         username={user?.username || "User"}
@@ -167,6 +172,10 @@ export default function Dashboard(){
       onSubmit={editingTask? updateTask : createTask}
       isEditing = {!!editingTask}
       />
+
+      <FriendsModal 
+      isOpen={ShowFriendsModal}
+      onClose={() => setShowFriendsModal(false)}/>
     </div>
   );
 }
