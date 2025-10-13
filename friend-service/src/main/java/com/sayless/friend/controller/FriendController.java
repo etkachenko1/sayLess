@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.*;
+
 
 @RestController
 @RequestMapping("/friends")
@@ -33,7 +36,7 @@ public class FriendController {
         return (String) auth.getPrincipal();
     }
 
-    @PostMapping("/request/")
+    @PostMapping("/request")
     public ResponseEntity<?> sendRequest(@RequestParam String receiverId, Authentication auth) {
         String me = uid(auth);
         if (me.equals(receiverId)) return ResponseEntity.badRequest().body("Cannot friend yourself!");
@@ -87,12 +90,20 @@ public class FriendController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<?> searchUsers(@RequestParam String username) {
+    public ResponseEntity<?> searchUsers(@RequestParam String username, Authentication auth) {
+        String me = uid(auth);
     try {
         // call auth service
         String url = "http://localhost:8081/users/search?username=" + username;
         Object[] users = restTemplate.getForObject(url, Object[].class);
-        return ResponseEntity.ok(users);
+        List<Object> filtered = Arrays.stream(users).filter(u-> {
+            if(u instanceof Map<?,?> map) {
+                Object id = map.get("id");
+                return id != null && !id.equals(me);
+            }
+            return true;
+        }).toList();
+        return ResponseEntity.ok(filtered);
     } catch (Exception e) {
         return ResponseEntity.internalServerError().body("Search failed");
     }
