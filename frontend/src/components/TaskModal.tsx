@@ -13,6 +13,7 @@ interface TaskModalProps {
   onDeadlineChange: (v: string) => void;
   onSubmit: () => Promise<boolean>;
   isEditing?:boolean;
+  friends: {id: string, username: string}[];
 }
 
 export default function TaskModal({
@@ -28,6 +29,7 @@ export default function TaskModal({
   onDeadlineChange,
   onSubmit,
   isEditing = false,
+  friends,
 }: TaskModalProps) {
   if (!isOpen) return null;
 
@@ -51,6 +53,7 @@ export default function TaskModal({
             return success;
           }}
           isEditing={isEditing}
+          friends={friends}
         />
         <div className="text-center">
           <button

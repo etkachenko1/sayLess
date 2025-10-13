@@ -31,6 +31,7 @@ export default function Dashboard(){
     const [deadline, setDeadline] = useState("")
     const [editingTask, setEditingTask] = useState<Task | null> (null);
     const [ShowFriendsModal, setShowFriendsModal] = useState(false);
+    const [friends, setFriends] = useState<{id: string; username: string}[]>([]);
     const token = localStorage.getItem("token")
 
     const headers = {
@@ -51,6 +52,17 @@ export default function Dashboard(){
         }
         setLoading(false)
     }
+
+    const fetchFriends = async () => {
+        const res = await fetch("http://localhost:8083/friends/accepted", { headers });
+        if (res.ok) {
+        const data = await res.json();
+        const token = localStorage.getItem("token");
+        const myId = JSON.parse(atob(token!.split(".")[1])).sub;
+        const updated = [{ id: myId, username: "Me" }, ...data];
+        setFriends(updated);        
+        }
+    };
 
     const createTask = async (): Promise<boolean> => {
         if(!title.trim()) return false;
@@ -117,15 +129,24 @@ export default function Dashboard(){
     }
 
     useEffect(() => {
-        fetchTasks()
-        fetchUserProfile().then(setUser)
-    }, [])
+        fetchTasks();
+        fetchUserProfile().then(profile => {
+            setUser(profile);
+            if (profile) {
+            setFriends(prev => [
+                ...prev.filter(f => f.id !== profile.id), 
+                { id: profile.id, username: profile.username }
+            ]);
+            }
+        });
+        }, []);
 
 
     return (
          <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
       <Navbar 
       onCreateTaskClick= {() => {
+        fetchFriends();
         setEditingTask(null);
         setTitle('');
         setDescription('');
@@ -171,6 +192,7 @@ export default function Dashboard(){
       onDeadlineChange={setDeadline}
       onSubmit={editingTask? updateTask : createTask}
       isEditing = {!!editingTask}
+      friends={friends}
       />
 
       <FriendsModal 

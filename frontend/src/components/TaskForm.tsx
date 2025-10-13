@@ -11,6 +11,7 @@ interface TaskFormProps {
   onDeadlineChange: (v: string) => void
   onSubmit: () => Promise<boolean>
   isEditing?: boolean
+  friends: {id: string; username:string}[];
 }
 
 export default function TaskForm({
@@ -23,7 +24,8 @@ export default function TaskForm({
   onAssignedToChange,
   onDeadlineChange,
   onSubmit,
-  isEditing
+  isEditing,
+  friends
 }: TaskFormProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
@@ -37,14 +39,16 @@ export default function TaskForm({
       />
       </div>
       <div className="flex flex-col">
-      <label className="text-sm font-medium mb-1 text-gray-300">Assign to</label>
-      <input
+      <label className="text-sm font-medium mb-1 text-gray-300">Assign to (defaults to me)</label>
+      <select
         value={assignedTo}
         onChange={(e) => onAssignedToChange(e.target.value)}
-        placeholder="Assign to (friends dropdown)"
         className="border border-gray-600 bg-gray-700 text-grey-400 rounded-lg p-3"
-        disabled
-      />
+      >
+        {friends.map(f => (
+          <option key={f.id} value={f.id}>{f.username}</option>
+          ))}
+      </select>
       </div>
       <div className="flex flex-col col-span-2">
         <label className="text-sm font-medium mb-1 text-gray-300">Description</label>
