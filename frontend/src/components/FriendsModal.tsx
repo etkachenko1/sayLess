@@ -3,7 +3,9 @@ import { useState, useEffect } from "react";
 interface Friend {
   id: string;
   requesterId: string;
+  requesterName: string;
   receiverId: string;
+  receiverName: string;
   status: "PENDING" | "ACCEPTED" | "DECLINED";
   createdAt: string;
 }
@@ -26,7 +28,7 @@ export default function FriendsModal({ isOpen, onClose }: FriendsModalProps) {
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<UserResult[]>([]);
   const token = localStorage.getItem("token");
-
+  const myId = JSON.parse(atob(token!.split(".")[1])).sub;
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
@@ -120,29 +122,40 @@ if (!isOpen) return null;
           </div>
         )}
         <div className="max-h-80 overflow-y-auto space-y-4">
-          {pending.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold text-yellow-400 mb-2">Pending Requests</h3>
-              {pending.map(f => (
-                <div key={f.id} className="flex justify-between items-center bg-gray-700 rounded-lg p-2">
-                  <span>{f.requesterId} → {f.receiverId}</span>
-                  <button
-                    onClick={() => acceptRequest(f.requesterId)}
-                    className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-500"
-                  >
-                    Accept
-                  </button>
-                </div>
-              ))}
-            </div>
+        {pending.length > 0 && (
+  <div>
+    <h3 className="text-sm font-semibold text-yellow-400 mb-2">Pending Requests</h3>
+    {pending.map(f => {
+      const isRequester = f.requesterId === myId;
+      return (
+        <div key={f.id} className="flex justify-between items-center bg-gray-700 rounded-lg p-2">
+          <span>
+            {isRequester
+              ? `Request sent to ${f.receiverName}`
+              : `Friend request from ${f.requesterName}`}
+          </span>
+
+          {!isRequester && (
+            <button
+              onClick={() => acceptRequest(f.requesterId)}
+              className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-500"
+            >
+              Accept
+            </button>
           )}
+        </div>
+      );
+    })}
+  </div>
+)}
+
 
           {accepted.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-green-400 mb-2">Friends</h3>
               {accepted.map(f => (
                 <div key={f.id} className="flex justify-between items-center bg-gray-700 rounded-lg p-2">
-                  <span>{f.requesterId} ↔ {f.receiverId}</span>
+                  <span>{f.requesterName}</span>
                   <button
                     onClick={() => removeFriend(f.requesterId)}
                     className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-500"
