@@ -10,8 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.*;
 
@@ -108,4 +106,24 @@ public class FriendController {
         return ResponseEntity.internalServerError().body("Search failed");
     }
 }
+@GetMapping("/accepted")
+public ResponseEntity<?> getAcceptedFriends(Authentication auth) {
+    String me = uid(auth);
+    List<Friends> accepted = repo.findByRequesterIdOrReceiverId(me, me).stream()
+        .filter(f -> f.getStatus() == Friends.Status.ACCEPTED)
+        .toList();
+
+    var friendDtos = accepted.stream().map(f -> {
+        boolean amRequester = f.getRequesterId().equals(me);
+        String friendId = amRequester ? f.getReceiverId() : f.getRequesterId();
+        String friendName = userClient.getUsername(friendId);
+        return Map.of(
+            "id", friendId,
+            "username", friendName
+        );
+    }).toList();
+
+    return ResponseEntity.ok(friendDtos);
+}
+
 }
