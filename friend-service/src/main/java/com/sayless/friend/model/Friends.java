@@ -5,6 +5,10 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 
+/**
+ * Read about indexing . Nothing wrong here but understand that concept . By default its indexed with ID which is not always useful . You can have secondary
+ * indexes for searches that are not by ID, you also need to understand the trade off and not havign index on everything . Its all about optimization"
+ */
 @Document(collection = "friends")
 public class Friends {
     @Id

@@ -13,7 +13,17 @@ import org.springframework.web.bind.annotation.*;
 import java.util.stream.Collectors;
 import java.util.*;
 
+/** I love your work but I have left comments for best practices which obviously I dont even expect from good engineers but thats what
+ * makes you amazing. So I am glad that I can point you there. YOu dont need to  understand everything and you can ignore if it doesnt make sense but even familairity would make you amazing for any interview
+ *
+ */
 
+
+/**
+ * Great work but if you wish to enhance your skill a little and be a great engineer read about two different kind of Design Patters 1.) DAO based 2.) Service oriented
+ * you have used service repo oriented pattern. YFInd out when is DAO used over service
+ * Its all about best practices and design patterns
+ * **/
 @RestController
 @RequestMapping("/friends")
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
@@ -76,6 +86,20 @@ public class FriendController {
         )).toList();
     }
 
+
+    /**
+     * So read about streaming and optionals and look into below implementation
+     * @DeleteMapping("/remove")
+     * public ResponseEntity<?> removeFriend(@RequestParam String friendId, Authentication auth) {
+     *     String me = uid(auth);
+     *     repo.deleteByRequesterIdAndReceiverIdOrRequesterIdAndReceiverId(me, friendId, friendId, me);
+     *     return ResponseEntity.noContent().build();
+     * }
+     *
+     * For cases where you are quring by a unique identifier such as id in this case and you are expecting one result .
+     * YOu use the abive way cuzz its optimized . Stream collects and then runs filter in it and is better used when you are expecting more than one. So calling .first int he result  says it all that you dont need to use it here
+     * Also read about 'Optionals' in Java
+     */
     @DeleteMapping("/remove")
     public ResponseEntity<?> removeFriend(@RequestParam String friendId, Authentication auth) {
         String me = uid(auth);
@@ -90,8 +114,50 @@ public class FriendController {
     @GetMapping("/search")
     public ResponseEntity<?> searchUsers(@RequestParam String username, Authentication auth) {
         String me = uid(auth);
-    try {
-        // call auth service
+
+
+        /**
+         *  this is solid work, but just for learning sake
+         * im gonna walk through two best practices that separate
+         *  someone who is great from someone who is truly badass lol
+         *  PLease do some research on these cuz i just gave you pointers if you want to learn more
+         1. Custom Exceptions
+         Always create custom exception class that extends Runtime excption.
+         Each excepton should represent a specific failure case for example UserNotFoundException/InvalidReqestException.
+         The busniess logic should be in a seperate service class not the controller.
+         When error happens throw the custom exception from there. it will bubble up to controller where you can catch it and just return a generic reponse like 503.
+         This keeps code clean and modular, makes logs easy to read and hides internal details from users, they only see a genric error.
+
+         2. Api Client Classes
+         When calling another api make a client class, like UserServiceClient.
+         That class should handle request creation, headers, auth and reading url from application.properties file.
+         Keeping all that logic in one place helps you reuse code and avoid stupid mistakes.
+         You can easily switch between dev staging and prod by changing properties, no need to touch code again.
+
+         3. Avoid hardcoded strings
+         Dont hardcode urls keys or random text in code, looks messy and breaks easy.
+         Use constants for fixed values, enums for grouped stuff and property files for configs that can change per env.
+         You can inject them using @Value or @ConfigurationProperties.
+         Property files live inside resource folder you can have like application-dev.properties or application-prod.properties etc.
+         which jhelps swith between different environmemnts with just swithcing the source .
+
+         4. Dependency Injection
+         Learn how Spring boot IOC container works, its kinda the core thing.
+         DI helps to write cleaner and testable code.
+         Instead of new SomeService() you let Spring handle it using @Autowired or constructor injection.
+         Understanding DI is what really separates an engineer from just a developer.
+
+         You should be also able to answer whats JPA , Hbernate , Spring -data and what are differences . Which one is abstraction and which one is really the implemntation among those
+         IMportant
+
+         5. Design patterns and Beans
+         Read how beans work in Springboot what they do and how scopes like singleton or prototype behave.
+         Also read about design paterns like singleton factory strategy etx they help in writing modular and reusable stuf
+         */
+
+        try {
+        // call auth servic
+            /** YOu have a user client defined in the project . Why are you not using it ? Thats exactly I was talking about in my second point above of best practices**/
         String url = "http://localhost:8081/users/search?username=" + username;
         Object[] users = restTemplate.getForObject(url, Object[].class);
         List<Object> filtered = Arrays.stream(users).filter(u-> {

@@ -10,6 +10,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration; 
 import java.util.List;
 
+/**
+ * Love that you have this class for configs done very well. But again no lose strings , use configs from property file . Seprate logic from  data, properties always"
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -18,6 +21,7 @@ public class SecurityConfig {
         http.csrf(csrf->csrf.disable())
             .cors(cors->cors.configurationSource(req -> {
                 CorsConfiguration c = new CorsConfiguration();
+                // this list cooule be populated here but instantiated somewhere else with no lose strings . Values come from property files or constants or enums
                 c.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
                 c.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
                 c.setAllowedHeaders(List.of("*"));
@@ -28,6 +32,7 @@ public class SecurityConfig {
             //disable default spring security login and basic auth since we have our own
             //no auth required for spring health check, error handler and OPTIONS reqs from cors preflight
             .authorizeHttpRequests(auth->auth
+                    // This is perfect cuz you use lose trings with requestmatcher etc , or mappings . Good job
             .requestMatchers("/actuator/health", "/error").permitAll()
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .anyRequest().authenticated()
