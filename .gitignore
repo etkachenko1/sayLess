@@ -43,3 +43,6 @@ replay_pid*
 
 __pycache__/
 *.pyc
+
+
+*/venv/
