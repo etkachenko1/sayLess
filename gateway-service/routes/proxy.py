@@ -8,8 +8,7 @@ SERVICES = {
     "auth": "http://localhost:8081",
     "tasks": "http://localhost:8082",
     "friends": "http://localhost:8083",
-    "predict": "http://localhost:8084"
-
+    "ai": "http://localhost:8084"
 }
 
 async def forward_request(service_name: str, path: str, request: Request):
@@ -29,7 +28,7 @@ async def forward_request(service_name: str, path: str, request: Request):
         res = await client.request(
             request.method,
             f"{base_url}/{path}",
-            headers = request.headers.raw,
+            headers = dict(request.headers),
             content= await request.body()
         )
         return Response(
@@ -40,4 +39,5 @@ async def forward_request(service_name: str, path: str, request: Request):
 
 @router.api_route("/{service_name}/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def proxy(service_name: str, path: str, request: Request):
+    #rate limiting is handled at the app level in main.py
     return await forward_request(service_name, path, request)
