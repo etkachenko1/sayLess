@@ -27,6 +27,10 @@ public class AuthController {
         String email = body.get("email");
         String password  = body.get("password");
 
+        if (username == null || username.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "Username is required"));
+        if (email == null || email.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
+        if (password == null || password.length() < 6) return ResponseEntity.badRequest().body(Map.of("error", "Password must be at least 6 characters"));
+
         //check if the user already exists
         if(userRepo.existsByUsername(username)) return ResponseEntity.badRequest().body(Map.of("error", "This username is already taken."));
         if(userRepo.existsByEmail(email)) return ResponseEntity.badRequest().body(Map.of("error", "This email is already taken."));
@@ -43,6 +47,9 @@ public class AuthController {
         //if does and the password matches, then create session jwt token
         String username = body.get("username");
         String password  = body.get("password");
+
+        if (username == null || username.isBlank() || password == null || password.isBlank())
+            return ResponseEntity.status(401).body(Map.of("error", "Username and password are required"));
 
         var query = userRepo.findByUsername(username);
         if(query.isEmpty()) return ResponseEntity.status(401).body(Map.of("error","This username does not exist" ));

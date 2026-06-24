@@ -42,6 +42,11 @@ function Auth() {
     const register = async () => {
         setError("")
         setSuccessMessage("");
+
+        if (!registerForm.username.trim()) { setError("Username is required"); return; }
+        if (!registerForm.email.trim()) { setError("Email is required"); return; }
+        if (registerForm.password.length < 6) { setError("Password must be at least 6 characters"); return; }
+
         try {
             //send HTTP Post requesr to backend
             const res = await fetch("http://localhost:8081/auth/register", {
