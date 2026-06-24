@@ -1,6 +1,7 @@
 import { getIdFromToken } from "./getIdFromToken";
+import { API_URL } from "../config/api";
 
-const AUTH_API = "http://localhost:8081"
+const USERS_API = `${API_URL}/users`
 
 export interface UserProfile {
     id: string;
@@ -14,9 +15,12 @@ export async function fetchUserProfile(): Promise<UserProfile | null> {
     const userId = getIdFromToken();
     if (!userId) return null;
 
+    const token = localStorage.getItem("token");
+
     try {
-        //stale token fix
-        const res = await fetch(`${AUTH_API}/users/${userId}`);
+        const res = await fetch(`${USERS_API}/${userId}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (res.status === 401 || res.status === 404) {
             localStorage.removeItem("token");
             return null;

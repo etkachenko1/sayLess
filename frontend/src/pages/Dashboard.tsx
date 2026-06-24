@@ -6,6 +6,8 @@ import TaskModal from "../components/TaskModal";
 import FriendsModal from "../components/FriendsModal";
 import { fetchUserProfile } from "../utils/fetchUserProfile"
 import type { UserProfile } from "../utils/fetchUserProfile";
+import { API_URL } from "../config/api";
+
 interface Task {
     id: string
     title: string
@@ -18,7 +20,7 @@ interface Task {
     assignedToName: string
 }
 
-const API = "http://localhost:8082"
+const API = API_URL
 
 export default function Dashboard(){
     const [tasks, setTasks] = useState<Task[]>([])
@@ -54,7 +56,7 @@ export default function Dashboard(){
     }
 
     const fetchFriends = async () => {
-        const res = await fetch("http://localhost:8083/friends/accepted", { headers });
+        const res = await fetch(`${API_URL}/friends/accepted`, { headers });
         if (res.ok) {
         const data = await res.json();
         const token = localStorage.getItem("token");

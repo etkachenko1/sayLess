@@ -1,6 +1,7 @@
 import { useState } from "react"
 import type { ChangeEvent } from "react"
 import logo from "./assets/sayless-logo.png"
+import { API_URL } from "./config/api"
 
 
 
@@ -49,7 +50,7 @@ function Auth() {
 
         try {
             //send HTTP Post requesr to backend
-            const res = await fetch("http://localhost:8081/auth/register", {
+            const res = await fetch(`${API_URL}/auth/register`, {
                 method: "POST",
                 headers: {"Content-Type" : "application/json"},
                 body: JSON.stringify(registerForm),
@@ -84,7 +85,7 @@ function Auth() {
     const login = async () => {
         setError("")
         try {
-            const res = await fetch("http://localhost:8081/auth/login", {
+            const res = await fetch(`${API_URL}/auth/login`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(loginForm),
@@ -112,7 +113,7 @@ function Auth() {
     const checkUsername = async (username: string) => {
       if(!username) return
       try {
-        const res = await fetch(`http://localhost:8081/auth/check-username/${username}`)
+        const res = await fetch(`${API_URL}/auth/check-username/${username}`)
         const data = await res.json()
         setUsernameAvailable(data.available)
       } catch (e) {

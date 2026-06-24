@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API_URL } from "../config/api";
 
 interface Friend {
   id: string;
@@ -20,7 +21,7 @@ interface FriendsModalProps {
   onClose: () => void;
 }
 
-const API = "http://localhost:8083";
+const API = API_URL;
 
 
 export default function FriendsModal({ isOpen, onClose }: FriendsModalProps) {

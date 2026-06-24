@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {CheckCircle, Trash2, CalendarDays, User, Clock, Edit2, Brain} from "lucide-react"
+import { API_URL } from "../config/api"
 
 interface Task {
   id: string;
@@ -37,7 +38,7 @@ export default function TaskList({
     if(!token) return;
 
     try {
-      const res = await fetch("http://localhost:8080/ai/predict", {
+      const res = await fetch(`${API_URL}/ai/predict`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
