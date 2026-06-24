@@ -23,6 +23,8 @@ def _days_until(d):
     if d is None:
         return 0.0
     now = datetime.now(timezone.utc)
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=timezone.utc)
     diff = (d - now).total_seconds() / 86400.0
     return float(diff)
 
@@ -67,7 +69,7 @@ def build_training_frame(tasks: list[dict]) -> pd.DataFrame:
     thirty_days_ago = datetime.now(timezone.utc).timestamp() - 30*86400
     df["created_ts"] = df["createdAt"].apply(lambda d: d.timestamp() if isinstance(d, datetime) else None)
     recent = df[df["created_ts"].notna() & (df["created_ts"] >= thirty_days_ago)] \
-        .groupby("createdBy").size().reset_index(name="recent_activity_30d")
+        .groupby("assignedTo").size().reset_index(name="recent_activity_30d")
     #combine
     features = df.merge(by_user, on="assignedTo", how="left") \
                  .merge(recent, on="assignedTo", how="left")

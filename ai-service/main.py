@@ -59,8 +59,13 @@ def _user_aggregates(user_id: str):
     recent_30d = 0
     for t in tasks:
         cat = t.get("createdAt")
-        if isinstance(cat, datetime) and cat >= cutoff:
-            recent_30d += 1
+
+        if isinstance(cat, datetime):
+            if cat.tzinfo is None:
+                cat = cat.replace(tzinfo=timezone.utc)
+
+            if cat >= cutoff:
+                recent_30d += 1
 
     return {
         "user_total_tasks": float(total),
