@@ -1,4 +1,6 @@
-import {CheckCircle, Trash2, CalendarDays, User, Clock, Edit2} from "lucide-react"
+import {useState} from "react";
+import {CheckCircle, Trash2, CalendarDays, User, Clock, Edit2, Brain} from "lucide-react"
+
 interface Task {
   id: string;
   title: string;
@@ -27,6 +29,35 @@ export default function TaskList({
   onEdit,
 }: TaskListProps) {
   if (loading) return (<div className="text-center text-gray-400 animate-pulse py-6">Loading tasks...</div>);
+
+  const [predictions, setPredictions] = useState<Record<string, number>>({});
+  const token = localStorage.getItem("token");
+
+  const handlePredict = async (task: Task) => {
+    if(!token) return;
+
+    try {
+      const res = await fetch("http://localhost:8080/ai/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization : `Bearer ${token}`,
+        },
+
+        body:JSON.stringify({
+          user_id: task.assignedToId || task.createdById,
+          text: `${task.title ?? ""} ${task.description ?? ""}`,
+          deadline: task.deadline,
+          assigned_by: task.createdById,
+        }),
+      });
+      if (!res.ok) throw new Error(`AI service error: ${res.status}`);
+      const data = await res.json();
+      setPredictions((prev) => ({ ...prev, [task.id]: data.likelihood }));
+   } catch (err) {
+    console.error("Prediction failed", err); }
+    };
+
   if (tasks.length === 0) return (<div className="text-center text-gray-500 py-6 italic">No tasks, take a break ☕.</div>);
   const getAccentColor = (status: string) => {
     switch (status) {
@@ -127,6 +158,11 @@ return (
                     </span>
                   </span>
                 )}
+                {predictions[t.id] !== undefined && (
+                  <div className="mt-2 text-sm text-purple-300 font-medium">
+                    Probability: {(predictions[t.id] * 100).toFixed(1)}%
+                    </div> )}
+
               </div>
             </div>
 
@@ -150,6 +186,11 @@ return (
                 >
                 <Edit2 className="h-4 w-4"/> Edit
                 </button>
+                <button
+                onClick={() => handlePredict(t)}
+                className="flex items-center gap-1 text-sm text-white bg-purple-600/90 hover:bg-purple-500 transition-colors px-3 py-1.5 rounded-lg shadow-sm"
+                >
+                  <Brain className="h-4 w-4" /> Predict </button>
               <button
                 onClick={() => onDelete(t.id)}
                 className="flex items-center gap-1 text-sm text-white bg-red-700/90 hover:bg-red-600 transition-colors px-3 py-1.5 rounded-lg shadow-sm"
