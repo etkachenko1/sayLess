@@ -8,5 +8,8 @@ import java.util.Optional;
 public interface FriendRepository extends MongoRepository<Friends, String> {
     List<Friends> findByRequesterIdOrReceiverId(String requesterId, String receiverId);
     Optional<Friends> findByRequesterIdAndReceiverId(String requesterId, String receiverId);
-    
+    Optional<Friends> findFirstByRequesterIdAndReceiverIdOrRequesterIdAndReceiverId(
+        String requesterId1, String receiverId1, String requesterId2, String receiverId2);
+    void deleteByRequesterIdAndReceiverIdOrRequesterIdAndReceiverId(
+        String requesterId1, String receiverId1, String requesterId2, String receiverId2);
 }

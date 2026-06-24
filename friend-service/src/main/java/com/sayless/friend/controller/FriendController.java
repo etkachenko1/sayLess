@@ -5,14 +5,11 @@ import com.sayless.friend.client.UserClient;
 import com.sayless.friend.repository.FriendRepository;
 import com.sayless.friend.dto.FriendDto;
 
-import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.stream.Collectors;
 import java.util.*;
-
 
 @RestController
 @RequestMapping("/friends")
@@ -20,14 +17,10 @@ import java.util.*;
 public class FriendController {
     private final FriendRepository repo;
     private final UserClient userClient;
-    private final RestTemplate restTemplate = new RestTemplate();
-
-
 
     public FriendController(FriendRepository repo, UserClient userClient) {
         this.repo = repo;
         this.userClient = userClient;
-
     }
 
     private String uid(Authentication auth) {
@@ -39,7 +32,7 @@ public class FriendController {
         String me = uid(auth);
         if (me.equals(receiverId)) return ResponseEntity.badRequest().body("Cannot friend yourself!");
 
-        Optional<Friends> existing = repo.findByRequesterIdAndReceiverId(me, receiverId);
+        Optional<Friends> existing = repo.findFirstByRequesterIdAndReceiverIdOrRequesterIdAndReceiverId(me, receiverId, receiverId, me);
         if (existing.isPresent()) return ResponseEntity.badRequest().body("Request already exists");
 
         Friends f = new Friends();
@@ -64,7 +57,7 @@ public class FriendController {
     public List<FriendDto> getAll(Authentication auth) {
         String me = uid(auth);
         List<Friends> all = repo.findByRequesterIdOrReceiverId(me, me);
-    
+
         return all.stream().map((Friends f) -> new FriendDto(
             f.getId(),
             f.getRequesterId(),
@@ -79,51 +72,45 @@ public class FriendController {
     @DeleteMapping("/remove")
     public ResponseEntity<?> removeFriend(@RequestParam String friendId, Authentication auth) {
         String me = uid(auth);
-        var all = repo.findByRequesterIdOrReceiverId(me, me);
-        all.stream()
-           .filter(f -> (f.getRequesterId().equals(friendId) || f.getReceiverId().equals(friendId)))
-           .findFirst()
-           .ifPresent(repo::delete);
+        repo.deleteByRequesterIdAndReceiverIdOrRequesterIdAndReceiverId(me, friendId, friendId, me);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/search")
     public ResponseEntity<?> searchUsers(@RequestParam String username, Authentication auth) {
         String me = uid(auth);
-    try {
-        // call auth service
-        String url = "http://localhost:8081/users/search?username=" + username;
-        Object[] users = restTemplate.getForObject(url, Object[].class);
-        List<Object> filtered = Arrays.stream(users).filter(u-> {
-            if(u instanceof Map<?,?> map) {
-                Object id = map.get("id");
-                return id != null && !id.equals(me);
-            }
-            return true;
-        }).toList();
-        return ResponseEntity.ok(filtered);
-    } catch (Exception e) {
-        return ResponseEntity.internalServerError().body("Search failed");
+        try {
+            Object[] users = userClient.searchUsers(username);
+            List<Object> filtered = Arrays.stream(users).filter(u -> {
+                if (u instanceof Map<?, ?> map) {
+                    Object id = map.get("id");
+                    return id != null && !id.equals(me);
+                }
+                return true;
+            }).toList();
+            return ResponseEntity.ok(filtered);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Search failed");
+        }
     }
-}
-@GetMapping("/accepted")
-public ResponseEntity<?> getAcceptedFriends(Authentication auth) {
-    String me = uid(auth);
-    List<Friends> accepted = repo.findByRequesterIdOrReceiverId(me, me).stream()
-        .filter(f -> f.getStatus() == Friends.Status.ACCEPTED)
-        .toList();
 
-    var friendDtos = accepted.stream().map(f -> {
-        boolean amRequester = f.getRequesterId().equals(me);
-        String friendId = amRequester ? f.getReceiverId() : f.getRequesterId();
-        String friendName = userClient.getUsername(friendId);
-        return Map.of(
-            "id", friendId,
-            "username", friendName
-        );
-    }).toList();
+    @GetMapping("/accepted")
+    public ResponseEntity<?> getAcceptedFriends(Authentication auth) {
+        String me = uid(auth);
+        List<Friends> accepted = repo.findByRequesterIdOrReceiverId(me, me).stream()
+            .filter(f -> f.getStatus() == Friends.Status.ACCEPTED)
+            .toList();
 
-    return ResponseEntity.ok(friendDtos);
-}
+        var friendDtos = accepted.stream().map(f -> {
+            boolean amRequester = f.getRequesterId().equals(me);
+            String friendId = amRequester ? f.getReceiverId() : f.getRequesterId();
+            String friendName = userClient.getUsername(friendId);
+            return Map.of(
+                "id", friendId,
+                "username", friendName
+            );
+        }).toList();
 
+        return ResponseEntity.ok(friendDtos);
+    }
 }
