@@ -9,10 +9,11 @@ load_dotenv()
 router = APIRouter()
 
 SERVICES = {
-    "auth":    os.getenv("AUTH_SERVICE_URL",    "http://localhost:8081"),
-    "tasks":   os.getenv("TASKS_SERVICE_URL",   "http://localhost:8082"),
-    "friends": os.getenv("FRIENDS_SERVICE_URL", "http://localhost:8083"),
+    "auth":    os.getenv("AUTH_SERVICE_URL",    "http://localhost:8081/auth"),
+    "tasks":   os.getenv("TASKS_SERVICE_URL",   "http://localhost:8082/tasks"),
+    "friends": os.getenv("FRIENDS_SERVICE_URL", "http://localhost:8083/friends"),
     "ai":      os.getenv("AI_SERVICE_URL",      "http://localhost:8084"),
+    "users":   os.getenv("USERS_SERVICE_URL",   "http://localhost:8081/users"),
 }
 
 _TIMEOUT = httpx.Timeout(10.0)
@@ -38,9 +39,10 @@ async def forward_request(service_name: str, path: str, request: Request):
         try:
             res = await client.request(
                 request.method,
-                f"{base_url}/{path}",
+                f"{base_url}/{path}" if path else base_url,
                 headers=forwarded_headers,
                 content=await request.body(),
+                params=dict(request.query_params),
             )
         except httpx.TimeoutException:
             raise HTTPException(status_code=504, detail=f"Service '{service_name}' timed out")
@@ -52,6 +54,11 @@ async def forward_request(service_name: str, path: str, request: Request):
         status_code=res.status_code,
         headers=dict(res.headers),
     )
+
+@router.api_route("/{service_name}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def proxy_collection(service_name: str, request: Request):
+    #handles collection endpoints: /tasks, /friends, /auth
+    return await forward_request(service_name, "", request)
 
 @router.api_route("/{service_name}/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def proxy(service_name: str, path: str, request: Request):
