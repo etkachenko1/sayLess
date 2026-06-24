@@ -1,7 +1,6 @@
 package com.sayless.friend.model;
-import java.lang.annotation.Inherited;
-
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 
@@ -9,7 +8,11 @@ import java.time.Instant;
 public class Friends {
     @Id
     private String id;
+
+    @Indexed
     private String requesterId;
+
+    @Indexed
     private String receiverId;
     private Status status;
     private Instant createdAt;
