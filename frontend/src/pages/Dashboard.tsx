@@ -150,7 +150,7 @@ export default function Dashboard(){
         setEditingTask(null);
         setTitle('');
         setDescription('');
-        setAssignedTo(user?.username || '');
+        setAssignedTo(user?.id || '');
         setDeadline(new Date(new Date().setHours(23,59,0,0)).toISOString());
         setShowTaskModal(true)}}
         onFriendsClick={()=> setShowFriendsModal(true)}
@@ -172,7 +172,7 @@ export default function Dashboard(){
                 setTitle(task.title);
                 setDescription(task.description);
                 setDeadline(task.deadline|| "");
-                setAssignedTo(task.assignedToName);
+                setAssignedTo(task.assignedToId);
                 setShowTaskModal(true);
             }}
           />
