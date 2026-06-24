@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+httpx
+python-dotenv
+pyjwt
+slowapi
+python-jose[cryptography]
+# to start the service:
+# python -m venv venv
+# source venv/bin/activate
+# pip install -r requirements.txt
