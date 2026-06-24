@@ -44,7 +44,7 @@ export default function FriendsModal({ isOpen, onClose }: FriendsModalProps) {
     }
   };
       const searchUsers = async ()=>{
-        if(search.trim().length < 2) {
+        if(search.trim().length < 1) {
             setSearchResults([]);
             return;
         }
