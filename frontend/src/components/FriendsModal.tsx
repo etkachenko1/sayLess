@@ -93,6 +93,9 @@ if (!isOpen) return null;
   const accepted = friends.filter(f => f.status === "ACCEPTED");
   const declined = friends.filter(f => f.status === "DECLINED");
 
+  const isAlreadyConnected = (userId: string) =>
+    friends.some(f => f.requesterId === userId || f.receiverId === userId);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-gray-800 rounded-xl shadow-lg w-full max-w-lg p-6">
@@ -111,12 +114,20 @@ if (!isOpen) return null;
             {searchResults.map((user) => (
               <div key={user.id} className="flex justify-between items-center bg-gray-700 rounded-lg p-2">
                 <span>{user.username}</span>
-                <button
-                  onClick={() => sendRequest(user.id)}
-                  className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-500"
-                >
-                  Add
-                </button>
+                {!isAlreadyConnected(user.id) ? (
+                  <button
+                    onClick={() => sendRequest(user.id)}
+                    className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-500"
+                  >
+                    Add
+                  </button>
+                ) : (
+                  <span className="text-gray-400 text-sm px-2">
+                    {accepted.some(f => f.requesterId === user.id || f.receiverId === user.id)
+                      ? "Friends"
+                      : "Pending"}
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -153,17 +164,21 @@ if (!isOpen) return null;
           {accepted.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-green-400 mb-2">Friends</h3>
-              {accepted.map(f => (
-                <div key={f.id} className="flex justify-between items-center bg-gray-700 rounded-lg p-2">
-                  <span>{f.requesterName}</span>
-                  <button
-                    onClick={() => removeFriend(f.requesterId)}
-                    className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-500"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
+              {accepted.map(f => {
+                const friendName = f.requesterId === myId ? f.receiverName : f.requesterName;
+                const friendId = f.requesterId === myId ? f.receiverId : f.requesterId;
+                return (
+                  <div key={f.id} className="flex justify-between items-center bg-gray-700 rounded-lg p-2">
+                    <span>{friendName}</span>
+                    <button
+                      onClick={() => removeFriend(friendId)}
+                      className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-500"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
