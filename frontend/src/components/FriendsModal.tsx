@@ -146,13 +146,28 @@ if (!isOpen) return null;
               : `Friend request from ${f.requesterName}`}
           </span>
 
-          {!isRequester && (
+          {isRequester ? (
             <button
-              onClick={() => acceptRequest(f.requesterId)}
-              className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-500"
+              onClick={() => removeFriend(f.receiverId)}
+              className="bg-gray-600 text-white px-2 py-1 rounded hover:bg-gray-500"
             >
-              Accept
+              Cancel
             </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => acceptRequest(f.requesterId)}
+                className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-500"
+              >
+                Accept
+              </button>
+              <button
+                onClick={() => removeFriend(f.requesterId)}
+                className="bg-red-700 text-white px-2 py-1 rounded hover:bg-red-600"
+              >
+                Reject
+              </button>
+            </div>
           )}
         </div>
       );
