@@ -1,4 +1,6 @@
 package com.sayless.task.controller;
+import com.sayless.task.event.TaskCreatedEvent;
+import com.sayless.task.kafka.TaskEventProducer;
 
 import com.sayless.task.client.UserClient;
 import com.sayless.task.dto.TaskCreateDto;
@@ -25,10 +27,12 @@ public class TaskController {
     //MongoDb repo for Task collection
     private final TaskRepository repo;
     private final UserClient userClient;
+    private final TaskEventProducer eventProducer;
  
-    public TaskController(TaskRepository repo, UserClient userClient) {
+    public TaskController(TaskRepository repo, UserClient userClient, TaskEventProducer eventProducer) {
         this.repo = repo;
         this.userClient = userClient;
+        this.eventProducer = eventProducer;
     }
 
     //helper to exctract userId stored as principal in jwtAuthFilter from token
@@ -83,7 +87,17 @@ public class TaskController {
         t.setCreatedBy(me);
         t.setCreatedAt(Instant.now());
         t.setUpdatedAt(Instant.now());
-        return repo.save(t);
+
+        Task saved = repo.save(t);
+        eventProducer.publish(
+            new TaskCreatedEvent(
+                saved.getId(),
+                saved.getTitle(),
+                saved.getAssignedTo(),
+                saved.getCreatedBy()
+            )
+        );
+        return saved;
     }
 
     //post /tasks/assign
