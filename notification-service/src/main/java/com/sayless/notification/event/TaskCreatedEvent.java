@@ -5,7 +5,9 @@ public class TaskCreatedEvent {
     private String taskId;
     private String title;
     private String assignedToId;
+    private String assignedToName;
     private String createdById;
+    private String createdByName;
 
     public TaskCreatedEvent() {
     }
@@ -13,11 +15,15 @@ public class TaskCreatedEvent {
     public TaskCreatedEvent(String taskId,
                             String title,
                             String assignedToId,
-                            String createdById) {
+                            String assignedToName,
+                            String createdById,
+                            String createdByName) {
         this.taskId = taskId;
         this.title = title;
         this.assignedToId = assignedToId;
+        this.assignedToName = assignedToName;
         this.createdById = createdById;
+        this.createdByName = createdByName;
     }
 
     public String getTaskId() {
@@ -44,11 +50,27 @@ public class TaskCreatedEvent {
         this.assignedToId = assignedToId;
     }
 
+    public String getAssignedToName() {
+        return assignedToName;
+    }
+
+    public void setAssignedToName(String assignedToName) {
+        this.assignedToName = assignedToName;
+    }
+
     public String getCreatedById() {
         return createdById;
     }
 
     public void setCreatedById(String createdById) {
         this.createdById = createdById;
+    }
+
+    public String getCreatedByName() {
+        return createdByName;
+    }
+
+    public void setCreatedByName(String createdByName) {
+        this.createdByName = createdByName;
     }
 }

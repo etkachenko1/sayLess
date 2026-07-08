@@ -94,7 +94,9 @@ public class TaskController {
                 saved.getId(),
                 saved.getTitle(),
                 saved.getAssignedTo(),
-                saved.getCreatedBy()
+                userClient.getUsername(saved.getAssignedTo()),
+                saved.getCreatedBy(),
+                userClient.getUsername(saved.getCreatedBy())
             )
         );
         return saved;

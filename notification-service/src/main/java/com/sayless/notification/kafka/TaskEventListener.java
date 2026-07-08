@@ -12,8 +12,9 @@ public class TaskEventListener {
 
         System.out.println("=================================");
         System.out.println("NEW TASK EVENT");
-        System.out.println(event.getTitle());
-        System.out.println(event.getAssignedToId());
+        System.out.println("Task: " + event.getTitle());
+        System.out.println("Assigned to: " + event.getAssignedToName());
+        System.out.println("Created by: " + event.getCreatedByName());
         System.out.println("=================================");
 
     }
