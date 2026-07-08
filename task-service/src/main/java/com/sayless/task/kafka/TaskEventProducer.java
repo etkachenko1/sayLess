@@ -16,6 +16,11 @@ public class TaskEventProducer {
     }
 
     public void publish(TaskCreatedEvent event) {
+        System.out.println("Publishing event: " + event.getTitle());
+
         kafkaTemplate.send(TOPIC, event.getTaskId(), event);
+        System.out.println("After send");
+
     }
+   
 }
