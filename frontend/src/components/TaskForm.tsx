@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Datepicker } from "flowbite-react";
 
 interface TaskFormProps {
@@ -27,6 +28,8 @@ export default function TaskForm({
   isEditing,
   friends
 }: TaskFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
       <div className="flex flex-col">
@@ -107,12 +110,19 @@ export default function TaskForm({
       </div>
 
       <button
-        onClick={() => {onSubmit();
+        disabled={isSubmitting}
+        onClick={async () => {
+          setIsSubmitting(true);
+          try {
+            await onSubmit();
+          } finally {
+            setIsSubmitting(false);
+          }
         }}
-        className={`${ 
+        className={`${
           isEditing ? "bg-blue-700 hover:bg-blue-600" : "bg-red-700 hover:bg-red-600"
-          } text-white px-4 py-2 rounded-lg col-span-2 transition-colors`}
-          > {isEditing ? "Update Task" : "Create Task"}
+          } text-white px-4 py-2 rounded-lg col-span-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+          > {isSubmitting ? "Saving..." : isEditing ? "Update Task" : "Create Task"}
         </button>
     </div>
   )
