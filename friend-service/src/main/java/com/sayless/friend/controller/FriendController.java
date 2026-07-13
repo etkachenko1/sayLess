@@ -3,6 +3,10 @@ package com.sayless.friend.controller;
 import com.sayless.friend.model.Friends;
 import com.sayless.friend.client.UserClient;
 import com.sayless.friend.repository.FriendRepository;
+import com.sayless.friend.kafka.FriendEventProducer;
+
+import com.sayless.friend.event.FriendRequestSentEvent;
+
 import com.sayless.friend.dto.FriendDto;
 
 import org.springframework.http.ResponseEntity;
@@ -17,10 +21,12 @@ import java.util.*;
 public class FriendController {
     private final FriendRepository repo;
     private final UserClient userClient;
+    private final FriendEventProducer eventProducer;
 
-    public FriendController(FriendRepository repo, UserClient userClient) {
+    public FriendController(FriendRepository repo, UserClient userClient, FriendEventProducer eventProducer) {
         this.repo = repo;
         this.userClient = userClient;
+        this.eventProducer = eventProducer;
     }
 
     private String uid(Authentication auth) {
@@ -39,7 +45,10 @@ public class FriendController {
         f.setRequesterId(me);
         f.setReceiverId(receiverId);
         f.setStatus(Friends.Status.PENDING);
-        return ResponseEntity.ok(repo.save(f));
+        Friends saved = (repo.save(f));
+        
+        eventProducer.publishRequestSent(new FriendRequestSentEvent(saved.getId(), me, userClient.getUsername(me), receiverId));
+        return ResponseEntity.ok(saved);
     }
 
     @PostMapping("/accept")
