@@ -10,7 +10,7 @@ public class KafkaTopicConfig {
 
     @Bean
     public NewTopic taskCreatedTopic() {
-        return TopicBuilder.name("task-created")
+        return TopicBuilder.name("task-events")
                 .partitions(1)
                 .replicas(1)
                 .build();

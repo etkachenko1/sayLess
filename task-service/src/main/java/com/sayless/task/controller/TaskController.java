@@ -1,5 +1,8 @@
 package com.sayless.task.controller;
 import com.sayless.task.event.TaskCreatedEvent;
+import com.sayless.task.event.TaskAssignedEvent;
+import com.sayless.task.event.TaskCompletedEvent;
+import com.sayless.task.event.TaskUpdatedEvent;
 import com.sayless.task.kafka.TaskEventProducer;
 
 import com.sayless.task.client.UserClient;
@@ -116,7 +119,18 @@ public class TaskController {
         }
         t.setAssignedTo(userId);
         t.setUpdatedAt(Instant.now());
-        return ResponseEntity.ok(repo.save(t)); }
+        Task saved = repo.save(t);
+        eventProducer.publishAssigned(
+            new TaskAssignedEvent(
+                saved.getId(),
+                saved.getTitle(),
+                saved.getAssignedTo(),
+                userClient.getUsername(saved.getAssignedTo()),
+                saved.getCreatedBy(),
+                userClient.getUsername(saved.getCreatedBy())
+            )
+        );
+        return ResponseEntity.ok(saved); }
 
         //update task
         @PutMapping("/{id}")
@@ -136,10 +150,18 @@ public class TaskController {
             if(dto.assignedTo()!= null)  t.setAssignedTo(dto.assignedTo());
             t.setUpdatedAt(Instant.now());
 
-            return ResponseEntity.ok(repo.save(t));
+            Task saved = repo.save(t);
+            eventProducer.publishUpdated(
+                new TaskUpdatedEvent(
+                    saved.getId(),
+                    saved.getTitle(),
+                    saved.getAssignedTo(),
+                    me,
+                    userClient.getUsername(me)
 
-
-        }
+                )
+            );  
+            return ResponseEntity.ok(saved); }
 
         //task status update
         @PatchMapping("/{id}/status")
@@ -155,7 +177,20 @@ public class TaskController {
             Task.Status newStatus =  Task.Status.valueOf(dto.status());
             t.setStatus(newStatus);
             t.setUpdatedAt(Instant.now());
-            return ResponseEntity.ok(repo.save(t));
+            Task saved = repo.save(t);
+            if (newStatus == Task.Status.DONE) {
+                eventProducer.publishCompleted(
+                    new TaskCompletedEvent(
+                        saved.getId(),
+                        saved.getTitle(),
+                        me,
+                        userClient.getUsername(me),
+                        saved.getCreatedBy(),
+                        userClient.getUsername(saved.getCreatedBy())
+                    )
+                );
+            }
+            return ResponseEntity.ok(saved);
 
         }
 
