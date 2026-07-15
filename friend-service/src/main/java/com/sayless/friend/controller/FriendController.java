@@ -6,6 +6,7 @@ import com.sayless.friend.repository.FriendRepository;
 import com.sayless.friend.kafka.FriendEventProducer;
 
 import com.sayless.friend.event.FriendRequestSentEvent;
+import com.sayless.friend.event.FriendRequestAcceptedEvent;
 
 import com.sayless.friend.dto.FriendDto;
 
@@ -59,7 +60,17 @@ public class FriendController {
 
         Friends f = opt.get();
         f.setStatus(Friends.Status.ACCEPTED);
-        return ResponseEntity.ok(repo.save(f));
+        Friends saved = repo.save(f);
+        eventProducer.publishRequestAccepted(
+            new FriendRequestAcceptedEvent(
+                saved.getId(),
+                saved.getRequesterId(),
+                userClient.getUsername(saved.getRequesterId()),
+                me,
+                userClient.getUsername(me)
+            )
+        );
+        return ResponseEntity.ok(saved);
     }
 
     @GetMapping
