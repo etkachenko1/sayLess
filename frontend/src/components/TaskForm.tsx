@@ -67,6 +67,7 @@ export default function TaskForm({
         <div className="flex flex-col sm:flex-row items-stretch gap-3">
           <div className="flex-1 relative">
             <Datepicker
+              value={deadline ? new Date(deadline) : null}
               onChange={(date: Date | null) => {
                 if (date) {
                   const current = deadline ? new Date(deadline) : null;
