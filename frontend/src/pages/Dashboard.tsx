@@ -7,6 +7,8 @@ import FriendsModal from "../components/FriendsModal";
 import { fetchUserProfile } from "../utils/fetchUserProfile"
 import type { UserProfile } from "../utils/fetchUserProfile";
 import { API_URL } from "../config/api";
+import { connectNotifications, disconnectNotifications } from "../utils/websocket";
+import type { Notification } from "../utils/websocket";
 
 interface Task {
     id: string
@@ -34,6 +36,7 @@ export default function Dashboard(){
     const [editingTask, setEditingTask] = useState<Task | null> (null);
     const [ShowFriendsModal, setShowFriendsModal] = useState(false);
     const [friends, setFriends] = useState<{id: string; username: string}[]>([]);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
     const token = localStorage.getItem("token")
 
     const headers = {
@@ -54,6 +57,22 @@ export default function Dashboard(){
         }
         setLoading(false)
     }
+
+    const fetchNotifications = async () => {
+        const res = await fetch(`${API}/notifications`, { headers });
+        if (res.ok) {
+            setNotifications(await res.json());
+        }
+    };
+
+    const markAllNotificationsRead = async () => {
+        const unread = notifications.filter(n => !n.read);
+        if (unread.length === 0) return;
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        await Promise.all(unread.map(n =>
+            fetch(`${API}/notifications/${n.id}/read`, { method: "PATCH", headers })
+        ));
+    };
 
     const fetchFriends = async () => {
         const res = await fetch(`${API_URL}/friends/accepted`, { headers });
@@ -132,15 +151,24 @@ export default function Dashboard(){
 
     useEffect(() => {
         fetchTasks();
+        fetchNotifications();
         fetchUserProfile().then(profile => {
             setUser(profile);
             if (profile) {
             setFriends(prev => [
-                ...prev.filter(f => f.id !== profile.id), 
+                ...prev.filter(f => f.id !== profile.id),
                 { id: profile.id, username: profile.username }
             ]);
             }
         });
+        }, []);
+
+    useEffect(() => {
+        connectNotifications((notification) => {
+            console.log("New notification received:", notification);
+            setNotifications(prev => [notification, ...prev]);
+        });
+        return () => disconnectNotifications();
         }, []);
 
 
@@ -156,6 +184,8 @@ export default function Dashboard(){
         setDeadline(new Date(new Date().setHours(23,59,0,0)).toISOString());
         setShowTaskModal(true)}}
         onFriendsClick={()=> setShowFriendsModal(true)}
+        notifications={notifications}
+        onMarkAllNotificationsRead={markAllNotificationsRead}
         />
       <div className="flex flex-1 p-6 space-x-6">
         <Sidebar 
