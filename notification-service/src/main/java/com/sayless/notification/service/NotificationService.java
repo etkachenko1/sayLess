@@ -3,12 +3,8 @@ package com.sayless.notification.service;
 import com.sayless.notification.event.*;
 import com.sayless.notification.model.Notification;
 import com.sayless.notification.repository.NotificationRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import jakarta.annotation.PostConstruct;
 
 // determines who gets the notification
 //each method resolves the recepient of notification differently.
@@ -19,27 +15,13 @@ import jakarta.annotation.PostConstruct;
 
 @Service
 public class NotificationService {
-    private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
 
     private final NotificationRepository repo;
-    private final MongoTemplate mongoTemplate;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    @Value("${spring.data.mongodb.uri}")
-    private String mongoUri;
-
-    @Value("${spring.data.mongodb.database:NOT_SET}")
-    private String mongoDatabaseProperty;
-
-    public NotificationService(NotificationRepository repo, MongoTemplate mongoTemplate) {
+    public NotificationService(NotificationRepository repo, SimpMessagingTemplate messagingTemplate) {
         this.repo = repo;
-        this.mongoTemplate = mongoTemplate;
-    }
-
-    @PostConstruct
-    public void logResolvedMongoUri() {
-        log.info("### spring.data.mongodb.uri property = {}", mongoUri);
-        log.info("### spring.data.mongodb.database property = {}", mongoDatabaseProperty);
-        log.info("### MongoTemplate is ACTUALLY connected to database = {}", mongoTemplate.getDb().getName());
+        this.messagingTemplate = messagingTemplate;
     }
 
     public void notifyTaskCreated(TaskCreatedEvent event) {
@@ -83,14 +65,8 @@ public class NotificationService {
     }
 
     private void save(String userId, String message, Notification.Type type) {
-        log.info("### Attempting to save notification for userId={} message='{}'", userId, message);
-        try {
-            Notification saved = repo.save(new Notification(userId, message, type));
-            log.info("### Save call returned successfully, generated id={}", saved.getId());
-        } catch (Exception e) {
-            log.error("### Save call threw an exception", e);
-            throw e;
-        }
+        Notification saved = repo.save(new Notification(userId, message, type));
+        messagingTemplate.convertAndSendToUser(userId, "/queue/notifications", saved);
     }
-    
+
 }

@@ -30,6 +30,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth->auth
             .requestMatchers("/actuator/health", "/error").permitAll()
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            .requestMatchers("/ws/**").permitAll()
             .anyRequest().authenticated()
             )
             //signaling touse custom filter instead of spring security chain's default one
