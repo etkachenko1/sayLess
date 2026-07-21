@@ -144,6 +144,7 @@ public class TaskController {
                 return ResponseEntity.status(403).build();
 
             }
+            String previousAssignedTo = t.getAssignedTo();
             if(dto.title()!= null)  t.setTitle(dto.title());
             if(dto.description()!= null)  t.setDescription(dto.description());
             if(dto.deadline()!= null)  t.setDeadline(dto.deadline());
@@ -151,16 +152,29 @@ public class TaskController {
             t.setUpdatedAt(Instant.now());
 
             Task saved = repo.save(t);
-            eventProducer.publishUpdated(
-                new TaskUpdatedEvent(
-                    saved.getId(),
-                    saved.getTitle(),
-                    saved.getAssignedTo(),
-                    me,
-                    userClient.getUsername(me)
-
-                )
-            );  
+            boolean reassigned = dto.assignedTo() != null && !dto.assignedTo().equals(previousAssignedTo);
+            if (reassigned) {
+                eventProducer.publishAssigned(
+                    new TaskAssignedEvent(
+                        saved.getId(),
+                        saved.getTitle(),
+                        saved.getAssignedTo(),
+                        userClient.getUsername(saved.getAssignedTo()),
+                        me,
+                        userClient.getUsername(me)
+                    )
+                );
+            } else {
+                eventProducer.publishUpdated(
+                    new TaskUpdatedEvent(
+                        saved.getId(),
+                        saved.getTitle(),
+                        saved.getAssignedTo(),
+                        me,
+                        userClient.getUsername(me)
+                    )
+                );
+            }
             return ResponseEntity.ok(saved); }
 
         //task status update
