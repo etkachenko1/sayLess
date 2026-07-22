@@ -1,4 +1,12 @@
 services:
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
   kafka:
     image: apache/kafka:latest
     container_name: kafka
@@ -7,11 +15,114 @@ services:
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://:9092,INTERNAL://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,INTERNAL://kafka:29092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      MONGO_URI: mongodb://mongo:27017/sayless
+      JWT_SECRET: ${JWT_SECRET}
+      SERVER_PORT: 8081
+    depends_on:
+      - mongo
+
+  task-service:
+    build: ./task-service
+    container_name: task-service
+    ports:
+      - "8082:8082"
+    environment:
+      MONGO_URI: mongodb://mongo:27017/sayless
+      JWT_SECRET: ${JWT_SECRET}
+      SERVER_PORT: 8082
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      AUTH_SERVICE_URL: http://auth-service:8081
+    depends_on:
+      - mongo
+      - kafka
+      - auth-service
+
+  friend-service:
+    build: ./friend-service
+    container_name: friend-service
+    ports:
+      - "8083:8083"
+    environment:
+      MONGO_URI: mongodb://mongo:27017/sayless
+      JWT_SECRET: ${JWT_SECRET}
+      SERVER_PORT: 8083
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      AUTH_SERVICE_URL: http://auth-service:8081
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+    depends_on:
+      - mongo
+      - kafka
+      - auth-service
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    ports:
+      - "8085:8085"
+    environment:
+      MONGO_URI: mongodb://mongo:27017/sayless
+      JWT_SECRET: ${JWT_SECRET}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      - mongo
+      - kafka
+
+  ai-service:
+    build: ./ai-service
+    container_name: ai-service
+    ports:
+      - "8084:8000"
+    environment:
+      MONGO_URI: mongodb://mongo:27017/sayless
+      MONGO_DB: sayless
+    depends_on:
+      - mongo
+
+  gateway-service:
+    build: ./gateway-service
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      AUTH_SERVICE_URL: http://auth-service:8081/auth
+      TASKS_SERVICE_URL: http://task-service:8082/tasks
+      FRIENDS_SERVICE_URL: http://friend-service:8083/friends
+      AI_SERVICE_URL: http://ai-service:8000
+      USERS_SERVICE_URL: http://auth-service:8081/users
+      NOTIFICATIONS_SERVICE_URL: http://notification-service:8085/notifications
+    depends_on:
+      - auth-service
+      - task-service
+      - friend-service
+      - notification-service
+      - ai-service
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:8080
+    container_name: frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - gateway-service
+
+volumes:
+  mongo-data:
