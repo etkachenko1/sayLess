@@ -1,0 +1,11 @@
+# requests persistent disk storage so Mongo's data survives Pod restarts
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
