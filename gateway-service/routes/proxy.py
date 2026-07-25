@@ -14,7 +14,7 @@ SERVICES = {
     "friends": os.getenv("FRIENDS_SERVICE_URL", "http://localhost:8083/friends"),
     "ai":      os.getenv("AI_SERVICE_URL",      "http://localhost:8084"),
     "users":   os.getenv("USERS_SERVICE_URL",   "http://localhost:8081/users"),
-    "notification":   os.getenv("NOTIFICATIONS_SERVICE_URL",   "http://localhost:8085/notifications"),
+    "notifications":   os.getenv("NOTIFICATIONS_SERVICE_URL",   "http://localhost:8085/notifications"),
 }
 
 _TIMEOUT = httpx.Timeout(10.0)

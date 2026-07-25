@@ -1,0 +1,59 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sayless-gateway-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: sayless.local
+      http:
+        paths:
+          - path: /auth
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-service
+                port:
+                  number: 8080
+          - path: /tasks
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-service
+                port:
+                  number: 8080
+          - path: /friends
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-service
+                port:
+                  number: 8080
+          - path: /ai
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-service
+                port:
+                  number: 8080
+          - path: /notifications
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-service
+                port:
+                  number: 8080
+          - path: /users
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-service
+                port:
+                  number: 8080
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: 8085

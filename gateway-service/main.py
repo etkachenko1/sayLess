@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -15,9 +16,13 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 #CORS configuration to match Spring Boot services
+CORS_ALLOWED_ORIGINS = os.getenv(
+    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
