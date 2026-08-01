@@ -18,6 +18,12 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 8083
+          readinessProbe:
+            tcpSocket:
+              port: 8083
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 40
           env:
             - name: SERVER_PORT
               value: "8083"

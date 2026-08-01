@@ -18,9 +18,17 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 8081
+          readinessProbe:
+            tcpSocket:
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 40
           env:
             - name: SERVER_PORT
               value: "8081"
+            - name: CORS_ALLOWED_ORIGINS
+              value: http://sayless.local
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
