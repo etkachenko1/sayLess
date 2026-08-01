@@ -23,9 +23,6 @@ import java.util.List;
 
 @RestController //marks this as Rest api controller, so Spring will automatically expose methods as endpoints
 @RequestMapping("/tasks") //all endpoints here will begin with /tasks
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
-
-
 public class TaskController {
     //MongoDb repo for Task collection
     private final TaskRepository repo;

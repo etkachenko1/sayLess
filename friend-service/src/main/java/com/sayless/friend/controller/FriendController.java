@@ -18,7 +18,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/friends")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
 public class FriendController {
     private final FriendRepository repo;
     private final UserClient userClient;

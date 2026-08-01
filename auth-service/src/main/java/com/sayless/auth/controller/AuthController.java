@@ -12,7 +12,6 @@ import java.util.Map; //to read JSON request bodies as key-value pairs
 
 @RestController //tells SpringBoot that this class handles HTTP requests and will return JSON and HTML
 @RequestMapping("/auth")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 public class AuthController {
 
     @Autowired private UserRepository userRepo;
