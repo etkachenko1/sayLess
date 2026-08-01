@@ -17,7 +17,7 @@ SERVICES = {
     "notifications":   os.getenv("NOTIFICATIONS_SERVICE_URL",   "http://localhost:8085/notifications"),
 }
 
-_TIMEOUT = httpx.Timeout(10.0)
+_TIMEOUT = httpx.Timeout(25.0)
 
 async def forward_request(service_name: str, path: str, request: Request):
     base_url = SERVICES.get(service_name)
