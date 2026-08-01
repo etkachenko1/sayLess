@@ -1,5 +1,4 @@
 import { Client, type IMessage } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
 import { WS_URL } from "../config/api";
 
 export interface Notification {
@@ -18,7 +17,7 @@ export function connectNotifications(onMessage: (notification: Notification) => 
   if (!token) return;
 
   client = new Client({
-    webSocketFactory: () => new SockJS(`${WS_URL}/ws`),
+    brokerURL: `${WS_URL.replace(/^http/, "ws")}/ws`,
     connectHeaders: { Authorization: `Bearer ${token}` },
     reconnectDelay: 5000,
     onConnect: () => {
