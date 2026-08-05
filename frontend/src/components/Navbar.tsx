@@ -7,8 +7,10 @@ interface NavbarProps {
     onFriendsClick: () => void;
     notifications: Notification[];
     onMarkAllNotificationsRead: () => void;
+    onDeleteNotification: (id: string) => void;
+    onClearAllNotifications: () => void;
 }
-export default function Navbar({onCreateTaskClick, onFriendsClick, notifications, onMarkAllNotificationsRead}:NavbarProps){
+export default function Navbar({onCreateTaskClick, onFriendsClick, notifications, onMarkAllNotificationsRead, onDeleteNotification, onClearAllNotifications}:NavbarProps){
 
     const handleLogout = () => {
         localStorage.removeItem("token")
@@ -27,7 +29,12 @@ export default function Navbar({onCreateTaskClick, onFriendsClick, notifications
                     Create Task</button>
                 <button onClick={onFriendsClick} className="bg-gray-700 text-gray-200 px-4 py-2 rounded-lg hover: bg-gray-300">
                     Friends</button>
-                <NotificationBell notifications={notifications} onMarkAllRead={onMarkAllNotificationsRead} />
+                <NotificationBell
+                    notifications={notifications}
+                    onMarkAllRead={onMarkAllNotificationsRead}
+                    onDelete={onDeleteNotification}
+                    onClearAll={onClearAllNotifications}
+                />
                 <button onClick={handleLogout} className="bg-gray-700 text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-600">
                     Logout</button>
             </div>

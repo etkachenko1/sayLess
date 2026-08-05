@@ -74,6 +74,20 @@ export default function Dashboard(){
         ));
     };
 
+    const deleteNotification = async (id: string) => {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        await fetch(`${API}/notifications/${id}`, { method: "DELETE", headers });
+    };
+
+    const clearAllNotifications = async () => {
+        const all = notifications;
+        if (all.length === 0) return;
+        setNotifications([]);
+        await Promise.all(all.map(n =>
+            fetch(`${API}/notifications/${n.id}`, { method: "DELETE", headers })
+        ));
+    };
+
     const fetchFriends = async () => {
         const res = await fetch(`${API_URL}/friends/accepted`, { headers });
         if (res.ok) {
@@ -186,6 +200,8 @@ export default function Dashboard(){
         onFriendsClick={()=> setShowFriendsModal(true)}
         notifications={notifications}
         onMarkAllNotificationsRead={markAllNotificationsRead}
+        onDeleteNotification={deleteNotification}
+        onClearAllNotifications={clearAllNotifications}
         />
       <div className="flex flex-1 p-6 space-x-6">
         <Sidebar 
