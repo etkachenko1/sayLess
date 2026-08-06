@@ -7,6 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.Arrays;
@@ -20,7 +21,7 @@ public class SecurityConfig {
     private String[] allowedOrigins;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtFilter) throws Exception {
         http
             // CSRF config
             .csrf(csrf -> csrf.disable()) // disable entirely for APIs
@@ -36,12 +37,13 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/auth/**").permitAll() // allow public access to /auth/*
-                .requestMatchers("/users/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/users/**").permitAll()
                 .anyRequest().authenticated()
             )
             // Disable default login form
             .formLogin(form -> form.disable())         // disable default login page
-            .httpBasic(basic -> basic.disable());      // disable BasicAuth
+            .httpBasic(basic -> basic.disable())        // disable BasicAuth
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
