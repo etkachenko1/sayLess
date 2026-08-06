@@ -1,6 +1,7 @@
 import os
 import joblib
 import numpy as np
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,7 +18,29 @@ DB_NAME    = os.getenv("MONGO_DB", "sayless")
 TASKS_COLL = os.getenv("MONGO_TASKS_COLLECTION", "tasks")
 MODEL_PATH = os.getenv("MODEL_PATH", "model/task_model.pkl")
 
-app = FastAPI(title="SayLess AI Service", version="1.0")
+model = None
+feature_names = []
+
+def _load_model_from_disk():
+    global model, feature_names
+    bundle = joblib.load(MODEL_PATH)
+    model = bundle["model"]
+    feature_names = bundle["feature_names"]
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if os.path.exists(MODEL_PATH):
+        _load_model_from_disk()
+    else:
+        from model.train_model import train
+        try:
+            train()
+            _load_model_from_disk()
+        except Exception as e:
+            print(f"model not found at {MODEL_PATH} and startup auto-train did not produce one ({e}). /predict will return 503 until /train succeeds")
+    yield
+
+app = FastAPI(title="SayLess AI Service", version="1.0", lifespan=lifespan)
 
 #CORS configuration
 app.add_middleware(
@@ -27,16 +50,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-model = None
-feature_names = []
-
-if os.path.exists(MODEL_PATH):
-    bundle = joblib.load(MODEL_PATH)
-    model = bundle["model"]
-    feature_names = bundle["feature_names"]
-else:
-    print(f"model not found at {MODEL_PATH}. /predict will return error until trained")
 
 #mongo client
 mongo = MongoClient(MONGO_URI)
@@ -118,15 +131,10 @@ def predict(body: PredictRequest, _claims: dict = Depends(require_jwt)):
 
 @app.post("/train")
 def train_now(_claims: dict = Depends(require_jwt)):
-    #retrain model from live DB without restarting the service
     from model.train_model import train  # lazy import
     try:
         train()
-        #reload after training
-        global model, feature_names
-        bundle = joblib.load(MODEL_PATH)
-        model = bundle["model"]
-        feature_names = bundle["feature_names"]
+        _load_model_from_disk()
         return {"status": "ok", "message": "Retrained and reloaded"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
