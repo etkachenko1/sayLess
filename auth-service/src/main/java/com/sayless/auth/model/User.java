@@ -2,6 +2,7 @@
 package com.sayless.auth.model;
 
 // classes from the Spring Data MongoDB library
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.data.annotation.Id; //mark primary key
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document; //to map this class to a MongoDB collection
@@ -36,6 +37,7 @@ public class User {
     public String getEmail() {return email;}
     public void setEmail(String email) {this.email = email;}
 
+    @JsonIgnore
     public String getPassword() {return password;}
     public void setPassword(String password) {this.password = password;}
 
