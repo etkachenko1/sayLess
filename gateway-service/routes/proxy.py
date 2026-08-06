@@ -19,9 +19,15 @@ SERVICES = {
 
 _TIMEOUT = httpx.Timeout(25.0)
 
+#retrains and hot-swaps the live model - not something any authenticated user should be able to trigger
+#remotely, so it's kept off the gateway's public route map entirely (direct/internal access only)
+_BLOCKED_ROUTES = {("ai", "train")}
+
 async def forward_request(service_name: str, path: str, request: Request):
     base_url = SERVICES.get(service_name)
     if not base_url:
+        raise HTTPException(status_code=404, detail=f"Unknown service '{service_name}'")
+    if (service_name, path) in _BLOCKED_ROUTES:
         raise HTTPException(status_code=404, detail=f"Unknown service '{service_name}'")
 
     if service_name != "auth":
