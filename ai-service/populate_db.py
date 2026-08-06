@@ -6,7 +6,7 @@ Usage:
     python populate_db.py           # append data (skips existing usernames)
     python populate_db.py --clear   # drop users / tasks / friends first
 
-Generates ~240 tasks across 10 users with varied completion profiles so that
+Generates 250 tasks across 10 users with varied completion profiles so that
 LogisticRegression has meaningful signal in every feature:
     text_len, days_until_deadline, assigned_flag,
     user_total_tasks, user_completion_rate, user_avg_title_len, recent_activity_30d
