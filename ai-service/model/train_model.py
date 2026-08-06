@@ -1,9 +1,12 @@
+import json
 import os
 import joblib
 import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
+from sklearn.model_selection import StratifiedKFold, cross_val_predict, cross_val_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from dotenv import load_dotenv
@@ -55,30 +58,34 @@ def build_training_frame(tasks: list[dict]) -> pd.DataFrame:
     df["text_len"] = df["text"].apply(_safe_len)
     df["days_until_deadline"] = df["deadline"].apply(_days_until)
     df["label_done"] = df["status"].apply(_is_done)
+    df["title_len"] = df["title"].apply(lambda s: len(s or ""))
 
-
-    #user aggregates
-    by_user = df.groupby("assignedTo").agg(
-        user_total_tasks=("status", "count"),
-        user_done=("label_done", "sum"),
-        user_avg_title_len=("title", lambda s: np.mean([len(x or "") for x in s])),
-    ).reset_index()
-    by_user["user_completion_rate"] = (by_user["user_done"] + 1) / (by_user["user_total_tasks"] + 2)  # Laplace smoothing
-
-    #recent 30d activity, the most active are more likely to complete task
     thirty_days_ago = datetime.now(timezone.utc).timestamp() - 30*86400
     df["created_ts"] = df["createdAt"].apply(lambda d: d.timestamp() if isinstance(d, datetime) else None)
-    recent = df[df["created_ts"].notna() & (df["created_ts"] >= thirty_days_ago)] \
-        .groupby("assignedTo").size().reset_index(name="recent_activity_30d")
-    #combine
-    features = df.merge(by_user, on="assignedTo", how="left") \
-                 .merge(recent, on="assignedTo", how="left")
+    df["is_recent"] = df["created_ts"].notna() & (df["created_ts"] >= thirty_days_ago)
 
-    #fill empty vals from users with 0 history
-    features[["user_total_tasks","user_done","user_avg_title_len","user_completion_rate","recent_activity_30d"]] = \
-        features[["user_total_tasks","user_done","user_avg_title_len","user_completion_rate","recent_activity_30d"]].fillna(0.0)
+    by_user = df.groupby("assignedTo").agg(
+        user_total_tasks_all=("status", "count"),
+        user_done_all=("label_done", "sum"),
+        user_title_len_sum=("title_len", "sum"),
+        user_recent_all=("is_recent", "sum"),
+    ).reset_index()
 
-    #if you assign a task to yourself is 0.0, to someone else is 1.0
+    features = df.merge(by_user, on="assignedTo", how="left")
+    features[["user_total_tasks_all", "user_done_all", "user_title_len_sum", "user_recent_all"]] = \
+        features[["user_total_tasks_all", "user_done_all", "user_title_len_sum", "user_recent_all"]].fillna(0.0)
+
+    features["user_total_tasks"] = features["user_total_tasks_all"] - 1
+    features["user_done"] = features["user_done_all"] - features["label_done"]
+    features["user_completion_rate"] = (features["user_done"] + 1) / (features["user_total_tasks"] + 2)
+
+    has_other_tasks = features["user_total_tasks"] > 0
+    safe_denominator = features["user_total_tasks"].where(has_other_tasks, 1)
+    title_len_sum_loo = features["user_title_len_sum"] - features["title_len"]
+    features["user_avg_title_len"] = np.where(has_other_tasks, title_len_sum_loo / safe_denominator, 0.0)
+
+    features["recent_activity_30d"] = features["user_recent_all"] - features["is_recent"].astype(int)
+
     features["assigned_flag"] = (features["createdBy"] != features["assignedTo"]).astype(float)
 
     #drop rows without status labels
@@ -112,6 +119,17 @@ def train():
         ("scale", StandardScaler()), #normalizes numeric values
         ("clf", LogisticRegression(max_iter=200))
     ])
+
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    fold_accuracies = cross_val_score(pipeline, X, y, cv=skf, scoring="accuracy")
+    oof_proba = cross_val_predict(pipeline, X, y, cv=skf, method="predict_proba")[:, 1]
+    oof_pred = (oof_proba >= 0.5).astype(int)
+
+    cv_accuracy_mean = float(fold_accuracies.mean())
+    cv_accuracy_std = float(fold_accuracies.std())
+    cv_roc_auc = float(roc_auc_score(y, oof_proba))
+    report = classification_report(y, oof_pred, output_dict=True)
+
     pipeline.fit(X, y)
 
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
@@ -120,7 +138,23 @@ def train():
         "feature_names": list(X.columns)
     }, MODEL_PATH)
 
+    metrics = {
+        "trained_at": datetime.now(timezone.utc).isoformat(),
+        "n_samples": len(df),
+        "n_folds": skf.get_n_splits(),
+        "cv_accuracy_mean": cv_accuracy_mean,
+        "cv_accuracy_std": cv_accuracy_std,
+        "cv_roc_auc": cv_roc_auc,
+        "classification_report": report,
+    }
+    metrics_path = os.path.join(os.path.dirname(MODEL_PATH), "metrics.json")
+    with open(metrics_path, "w") as f:
+        json.dump(metrics, f, indent=2)
+
     print(f"Model was trained and saved in {MODEL_PATH} with {len(df)} samples")
+    print(f"5-fold CV accuracy: {cv_accuracy_mean:.3f} +/- {cv_accuracy_std:.3f}")
+    print(f"5-fold CV ROC-AUC: {cv_roc_auc:.3f}")
+    print(f"Metrics written to {metrics_path}")
 
 if __name__ == "__main__":
     train()
