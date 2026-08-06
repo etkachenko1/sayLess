@@ -6,3 +6,5 @@ pandas
 joblib
 python-dotenv
 pymongo
+pytest
+httpx
