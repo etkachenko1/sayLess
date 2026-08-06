@@ -1,10 +1,9 @@
-fastapi
-uvicorn
-httpx
-python-dotenv
-pyjwt
-slowapi
-python-jose[cryptography]
+fastapi==0.141.1
+uvicorn==0.52.1
+httpx==0.28.1
+python-dotenv==1.2.2
+slowapi==0.1.10
+python-jose[cryptography]==3.5.0
 # to start the service:
 # python -m venv venv
 # source venv/bin/activate
