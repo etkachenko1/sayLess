@@ -2,11 +2,12 @@ import os
 import joblib
 import numpy as np
 from datetime import datetime, timezone, timedelta
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pymongo import MongoClient
+from auth import require_jwt
 from schemas import PredictRequest, PredictResponse
 
 load_dotenv()
@@ -85,7 +86,7 @@ def root():
     return {"message": "AI service is working"}
 
 @app.post("/predict", response_model=PredictResponse)
-def predict(body: PredictRequest):
+def predict(body: PredictRequest, _claims: dict = Depends(require_jwt)):
     if model is None:
         raise HTTPException(status_code=503, detail="model_unavailable")
     
@@ -116,7 +117,7 @@ def predict(body: PredictRequest):
     return PredictResponse(likelihood=float(round(prob, 2)))
 
 @app.post("/train")
-def train_now():
+def train_now(_claims: dict = Depends(require_jwt)):
     #retrain model from live DB without restarting the service
     from model.train_model import train  # lazy import
     try:

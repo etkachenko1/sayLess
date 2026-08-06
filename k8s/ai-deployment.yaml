@@ -26,3 +26,8 @@ spec:
                 secretKeyRef:
                   name: auth-secret
                   key: MONGO_URI
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: JWT_SECRET
