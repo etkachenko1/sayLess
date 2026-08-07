@@ -110,9 +110,12 @@ def predict(body: PredictRequest, _claims: dict = Depends(require_jwt)):
         return PredictResponse(likelihood=0.5)
 
     #gather all numberic inputs for logistic regression
+    days_until_deadline = float(_days_until(body.deadline))
     features = {
         "text_len": float(len(body.text or "")),
-        "days_until_deadline": float(_days_until(body.deadline)),
+        "days_until_deadline": days_until_deadline,
+        "is_overdue": float(1.0 if days_until_deadline < 0 else 0.0),
+        "days_overdue": float(max(-days_until_deadline, 0.0)),
         "assigned_flag": float(1.0 if body.assigned_by != body.user_id else 0.0),
         "user_total_tasks": agg["user_total_tasks"],
         "user_completion_rate": agg["user_completion_rate"],

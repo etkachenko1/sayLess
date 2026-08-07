@@ -3,12 +3,12 @@ from datetime import datetime, timedelta, timezone
 from model.train_model import build_training_frame
 
 
-def _task(title, status, assigned_to, created_by="creator", days_ago=1):
+def _task(title, status, assigned_to, created_by="creator", days_ago=1, deadline=None):
     return {
         "title": title,
         "description": "",
         "status": status,
-        "deadline": None,
+        "deadline": deadline,
         "createdBy": created_by,
         "assignedTo": assigned_to,
         "createdAt": datetime.now(timezone.utc) - timedelta(days=days_ago),
@@ -67,6 +67,21 @@ def test_single_task_user_falls_back_to_neutral_prior():
     assert df.iloc[0]["user_total_tasks"] == 0
     assert df.iloc[0]["user_completion_rate"] == 0.5
     assert df.iloc[0]["user_avg_title_len"] == 0.0
+
+
+def test_is_overdue_and_days_overdue():
+    now = datetime.now(timezone.utc)
+    tasks = [
+        _task("past due", "TODO", "u4", deadline=now - timedelta(days=5)),
+        _task("not due yet", "TODO", "u4", deadline=now + timedelta(days=5)),
+    ]
+    df = build_training_frame(tasks).reset_index(drop=True)
+
+    overdue_row = df[df["is_overdue"] == 1.0].iloc[0]
+    future_row = df[df["is_overdue"] == 0.0].iloc[0]
+
+    assert overdue_row["days_overdue"] > 4.9
+    assert future_row["days_overdue"] == 0.0
 
 
 def test_recent_activity_excludes_the_row_itself():

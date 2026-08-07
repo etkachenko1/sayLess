@@ -4,6 +4,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
 from sklearn.model_selection import StratifiedKFold, cross_val_predict, cross_val_score
@@ -57,6 +58,8 @@ def build_training_frame(tasks: list[dict]) -> pd.DataFrame:
     df["text"] = (df["title"].fillna("") + " " + df["description"].fillna("")).astype(str)
     df["text_len"] = df["text"].apply(_safe_len)
     df["days_until_deadline"] = df["deadline"].apply(_days_until)
+    df["is_overdue"] = (df["days_until_deadline"] < 0).astype(float)
+    df["days_overdue"] = (-df["days_until_deadline"]).clip(lower=0)
     df["label_done"] = df["status"].apply(_is_done)
     df["title_len"] = df["title"].apply(lambda s: len(s or ""))
 
@@ -92,7 +95,7 @@ def build_training_frame(tasks: list[dict]) -> pd.DataFrame:
     features = features.dropna(subset=["label_done"])
 
     return features[[
-        "text_len", "days_until_deadline", "assigned_flag",
+        "text_len", "days_until_deadline", "is_overdue", "days_overdue", "assigned_flag",
         "user_total_tasks", "user_completion_rate", "user_avg_title_len",
         "recent_activity_30d", "label_done", "assignedTo"
     ]]
@@ -130,6 +133,16 @@ def train():
     cv_roc_auc = float(roc_auc_score(y, oof_proba))
     report = classification_report(y, oof_pred, output_dict=True)
 
+    rf_comparison = RandomForestClassifier(n_estimators=300, random_state=42)
+    rf_fold_accuracies = cross_val_score(rf_comparison, X, y, cv=skf, scoring="accuracy")
+    rf_oof_proba = cross_val_predict(rf_comparison, X, y, cv=skf, method="predict_proba")[:, 1]
+    rf_comparison_metrics = {
+        "note": "measured for comparison only - the deployed model is the logistic regression pipeline above",
+        "cv_accuracy_mean": float(rf_fold_accuracies.mean()),
+        "cv_accuracy_std": float(rf_fold_accuracies.std()),
+        "cv_roc_auc": float(roc_auc_score(y, rf_oof_proba)),
+    }
+
     pipeline.fit(X, y)
 
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
@@ -146,6 +159,7 @@ def train():
         "cv_accuracy_std": cv_accuracy_std,
         "cv_roc_auc": cv_roc_auc,
         "classification_report": report,
+        "random_forest_comparison": rf_comparison_metrics,
     }
     metrics_path = os.path.join(os.path.dirname(MODEL_PATH), "metrics.json")
     with open(metrics_path, "w") as f:
@@ -154,6 +168,7 @@ def train():
     print(f"Model was trained and saved in {MODEL_PATH} with {len(df)} samples")
     print(f"5-fold CV accuracy: {cv_accuracy_mean:.3f} +/- {cv_accuracy_std:.3f}")
     print(f"5-fold CV ROC-AUC: {cv_roc_auc:.3f}")
+    print(f"random forest comparison (not shipped): accuracy {rf_comparison_metrics['cv_accuracy_mean']:.3f} +/- {rf_comparison_metrics['cv_accuracy_std']:.3f}, ROC-AUC {rf_comparison_metrics['cv_roc_auc']:.3f}")
     print(f"Metrics written to {metrics_path}")
 
 if __name__ == "__main__":
