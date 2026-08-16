@@ -7,8 +7,8 @@ import FriendsModal from "../components/FriendsModal";
 import { fetchUserProfile } from "../utils/fetchUserProfile"
 import type { UserProfile } from "../utils/fetchUserProfile";
 import { API_URL } from "../config/api";
-import { connectNotifications, disconnectNotifications } from "../utils/websocket";
-import type { Notification } from "../utils/websocket";
+import { connectRealtime, disconnectRealtime } from "../utils/websocket";
+import type { Notification, TaskEvent, TaskSnapshot } from "../utils/websocket";
 
 interface Task {
     id: string
@@ -20,6 +20,22 @@ interface Task {
     createdById: string
     createdByName: string
     assignedToName: string
+    updatedAt?: string
+}
+
+function taskSnapshotToTask(snapshot: TaskSnapshot): Task {
+    return {
+        id: snapshot.taskId,
+        title: snapshot.title,
+        description: snapshot.description,
+        status: snapshot.status,
+        deadline: snapshot.deadline,
+        assignedToId: snapshot.assignedToId,
+        assignedToName: snapshot.assignedToName,
+        createdById: snapshot.createdById,
+        createdByName: snapshot.createdByName,
+        updatedAt: snapshot.updatedAt,
+    };
 }
 
 const API = API_URL
@@ -178,11 +194,35 @@ export default function Dashboard(){
         }, []);
 
     useEffect(() => {
-        connectNotifications((notification) => {
-            console.log("New notification received:", notification);
-            setNotifications(prev => [notification, ...prev]);
-        });
-        return () => disconnectNotifications();
+        connectRealtime(
+            (notification) => {
+                setNotifications(prev => [notification, ...prev]);
+            },
+            (event: TaskEvent) => {
+                if (event.type === "removed") {
+                    setTasks(prev => prev.filter(t => t.id !== event.taskId));
+                    return;
+                }
+                const incoming = taskSnapshotToTask(event.task);
+                setTasks(prev => {
+                    const existingIndex = prev.findIndex(t => t.id === incoming.id);
+                    if (existingIndex === -1) {
+                        return [...prev, incoming];
+                    }
+                    const existing = prev[existingIndex];
+                    if (existing.updatedAt && incoming.updatedAt && existing.updatedAt >= incoming.updatedAt) {
+                        return prev;
+                    }
+                    const next = [...prev];
+                    next[existingIndex] = incoming;
+                    return next;
+                });
+            },
+            () => {
+                fetchTasks();
+            }
+        );
+        return () => disconnectRealtime();
         }, []);
 
 
