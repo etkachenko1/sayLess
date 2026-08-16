@@ -46,5 +46,10 @@ public class TaskEventListener {
         notificationService.notifyTaskCompleted(event);
     }
 
+    @KafkaHandler
+    public void onDeleted(TaskDeletedEvent event) {
+        log.info("Task {} was deleted", event.getTaskId());
+        notificationService.notifyTaskDeleted(event);
+    }
 
 }
