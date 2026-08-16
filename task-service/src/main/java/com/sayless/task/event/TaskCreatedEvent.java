@@ -1,29 +1,43 @@
 package com.sayless.task.event;
 
+import java.time.Instant;
+
 public class TaskCreatedEvent {
 
     private String taskId;
     private String title;
+    private String description;
+    private Instant deadline;
+    private String status;
     private String assignedToId;
     private String assignedToName;
     private String createdById;
     private String createdByName;
+    private Instant updatedAt;
 
     public TaskCreatedEvent() {
     }
 
     public TaskCreatedEvent(String taskId,
                             String title,
+                            String description,
+                            Instant deadline,
+                            String status,
                             String assignedToId,
                             String assignedToName,
                             String createdById,
-                            String createdByName) {
+                            String createdByName,
+                            Instant updatedAt) {
         this.taskId = taskId;
         this.title = title;
+        this.description = description;
+        this.deadline = deadline;
+        this.status = status;
         this.assignedToId = assignedToId;
         this.assignedToName = assignedToName;
         this.createdById = createdById;
         this.createdByName = createdByName;
+        this.updatedAt = updatedAt;
     }
 
     public String getTaskId() {
@@ -40,6 +54,30 @@ public class TaskCreatedEvent {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Instant getDeadline() {
+        return deadline;
+    }
+
+    public void setDeadline(Instant deadline) {
+        this.deadline = deadline;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getAssignedToId() {
@@ -72,5 +110,13 @@ public class TaskCreatedEvent {
 
     public void setCreatedByName(String createdByName) {
         this.createdByName = createdByName;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

@@ -1,30 +1,51 @@
 package com.sayless.task.event;
 
+import java.time.Instant;
+
 public class TaskAssignedEvent {
+
     private String taskId;
     private String title;
+    private String description;
+    private Instant deadline;
+    private String status;
     private String assignedToId;
     private String assignedToName;
     private String createdById;
     private String createdByName;
-    public TaskAssignedEvent(){}
+    private String previousAssigneeId;
+    private Instant updatedAt;
+
+    public TaskAssignedEvent() {
+    }
 
     public TaskAssignedEvent(String taskId,
                             String title,
+                            String description,
+                            Instant deadline,
+                            String status,
                             String assignedToId,
                             String assignedToName,
                             String createdById,
-                            String createdByName){
+                            String createdByName,
+                            String previousAssigneeId,
+                            Instant updatedAt) {
         this.taskId = taskId;
         this.title = title;
+        this.description = description;
+        this.deadline = deadline;
+        this.status = status;
         this.assignedToId = assignedToId;
         this.assignedToName = assignedToName;
         this.createdById = createdById;
-        this.createdByName = createdByName; }
+        this.createdByName = createdByName;
+        this.previousAssigneeId = previousAssigneeId;
+        this.updatedAt = updatedAt;
+    }
 
     public String getTaskId() {
-            return taskId;
-        }
+        return taskId;
+    }
 
     public void setTaskId(String taskId) {
         this.taskId = taskId;
@@ -36,6 +57,30 @@ public class TaskAssignedEvent {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Instant getDeadline() {
+        return deadline;
+    }
+
+    public void setDeadline(Instant deadline) {
+        this.deadline = deadline;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getAssignedToId() {
@@ -69,8 +114,20 @@ public class TaskAssignedEvent {
     public void setCreatedByName(String createdByName) {
         this.createdByName = createdByName;
     }
+
+    public String getPreviousAssigneeId() {
+        return previousAssigneeId;
+    }
+
+    public void setPreviousAssigneeId(String previousAssigneeId) {
+        this.previousAssigneeId = previousAssigneeId;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }
-
-
-                            
-

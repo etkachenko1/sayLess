@@ -3,6 +3,7 @@ package com.sayless.task.kafka;
 import com.sayless.task.event.TaskCreatedEvent;
 import com.sayless.task.event.TaskAssignedEvent;
 import com.sayless.task.event.TaskCompletedEvent;
+import com.sayless.task.event.TaskDeletedEvent;
 import com.sayless.task.event.TaskUpdatedEvent;
 
 import org.springframework.kafka.core.KafkaTemplate;
@@ -50,5 +51,10 @@ public class TaskEventProducer {
         log.info("Published task-completed event {}", event.getTaskId());
 
     }
-   
+    public void publishDeleted(TaskDeletedEvent event) {
+        kafkaTemplate.send(TOPIC, event.getTaskId(), event);
+        log.info("Published task-deleted event {}", event.getTaskId());
+
+    }
+
 }

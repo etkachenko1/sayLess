@@ -2,6 +2,7 @@ package com.sayless.task.controller;
 import com.sayless.task.event.TaskCreatedEvent;
 import com.sayless.task.event.TaskAssignedEvent;
 import com.sayless.task.event.TaskCompletedEvent;
+import com.sayless.task.event.TaskDeletedEvent;
 import com.sayless.task.event.TaskUpdatedEvent;
 import com.sayless.task.kafka.TaskEventProducer;
 
@@ -57,7 +58,8 @@ public class TaskController {
                 t.getCreatedBy(),
                 createdByName,
                 t.getAssignedTo(),
-                assignedToName
+                assignedToName,
+                t.getUpdatedAt()
             );
         }).toList();
         }
@@ -93,10 +95,14 @@ public class TaskController {
             new TaskCreatedEvent(
                 saved.getId(),
                 saved.getTitle(),
+                saved.getDescription(),
+                saved.getDeadline(),
+                saved.getStatus().name(),
                 saved.getAssignedTo(),
                 userClient.getUsername(saved.getAssignedTo()),
                 saved.getCreatedBy(),
-                userClient.getUsername(saved.getCreatedBy())
+                userClient.getUsername(saved.getCreatedBy()),
+                saved.getUpdatedAt()
             )
         );
         return saved;
@@ -114,6 +120,7 @@ public class TaskController {
         if(!t.getCreatedBy().equals(me)) {
             return ResponseEntity.status(403).body("Only the creator can assign this task");
         }
+        String previousAssignedTo = t.getAssignedTo();
         t.setAssignedTo(userId);
         t.setUpdatedAt(Instant.now());
         Task saved = repo.save(t);
@@ -121,10 +128,15 @@ public class TaskController {
             new TaskAssignedEvent(
                 saved.getId(),
                 saved.getTitle(),
+                saved.getDescription(),
+                saved.getDeadline(),
+                saved.getStatus().name(),
                 saved.getAssignedTo(),
                 userClient.getUsername(saved.getAssignedTo()),
                 saved.getCreatedBy(),
-                userClient.getUsername(saved.getCreatedBy())
+                userClient.getUsername(saved.getCreatedBy()),
+                previousAssignedTo,
+                saved.getUpdatedAt()
             )
         );
         return ResponseEntity.ok(saved); }
@@ -155,10 +167,15 @@ public class TaskController {
                     new TaskAssignedEvent(
                         saved.getId(),
                         saved.getTitle(),
+                        saved.getDescription(),
+                        saved.getDeadline(),
+                        saved.getStatus().name(),
                         saved.getAssignedTo(),
                         userClient.getUsername(saved.getAssignedTo()),
-                        me,
-                        userClient.getUsername(me)
+                        saved.getCreatedBy(),
+                        userClient.getUsername(saved.getCreatedBy()),
+                        previousAssignedTo,
+                        saved.getUpdatedAt()
                     )
                 );
             } else {
@@ -166,9 +183,16 @@ public class TaskController {
                     new TaskUpdatedEvent(
                         saved.getId(),
                         saved.getTitle(),
+                        saved.getDescription(),
+                        saved.getDeadline(),
+                        saved.getStatus().name(),
                         saved.getAssignedTo(),
+                        userClient.getUsername(saved.getAssignedTo()),
+                        saved.getCreatedBy(),
+                        userClient.getUsername(saved.getCreatedBy()),
                         me,
-                        userClient.getUsername(me)
+                        userClient.getUsername(me),
+                        saved.getUpdatedAt()
                     )
                 );
             }
@@ -194,10 +218,16 @@ public class TaskController {
                     new TaskCompletedEvent(
                         saved.getId(),
                         saved.getTitle(),
+                        saved.getDescription(),
+                        saved.getDeadline(),
+                        saved.getStatus().name(),
+                        saved.getAssignedTo(),
+                        userClient.getUsername(saved.getAssignedTo()),
+                        saved.getCreatedBy(),
+                        userClient.getUsername(saved.getCreatedBy()),
                         me,
                         userClient.getUsername(me),
-                        saved.getCreatedBy(),
-                        userClient.getUsername(saved.getCreatedBy())
+                        saved.getUpdatedAt()
                     )
                 );
             }
@@ -217,6 +247,9 @@ public class TaskController {
             if (!t.getCreatedBy().equals(me)) {return ResponseEntity.status(403).build();}
 
             repo.deleteById(id);
+            eventProducer.publishDeleted(
+                new TaskDeletedEvent(t.getId(), t.getCreatedBy(), t.getAssignedTo())
+            );
             return ResponseEntity.noContent().build();
         }
 
