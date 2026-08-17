@@ -28,6 +28,7 @@
 /frontend/.env.local
 /frontend/.vscode/
 /frontend/.idea/
+/loadtest/node_modules/
 
 # === General OS / Editor cruft ===
 .DS_Store

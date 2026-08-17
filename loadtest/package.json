@@ -1,0 +1,12 @@
+{
+  "name": "sayless-loadtest",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "latency": "node latency-test.mjs"
+  },
+  "dependencies": {
+    "@stomp/stompjs": "^7.0.0",
+    "ws": "^8.18.0"
+  }
+}
