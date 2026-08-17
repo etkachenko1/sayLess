@@ -119,6 +119,7 @@ services:
       context: ./frontend
       args:
         VITE_API_URL: http://localhost:8080
+        VITE_WS_URL: http://localhost:8085
     container_name: frontend
     ports:
       - "5173:80"
