@@ -9,10 +9,20 @@ import org.springframework.http.ResponseEntity; //alllows to build HTTP response
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; //to hash passwords
 import java.util.Map; //to read JSON request bodies as key-value pairs
+import java.util.Set;
 
 @RestController //tells SpringBoot that this class handles HTTP requests and will return JSON and HTML
 @RequestMapping("/auth")
 public class AuthController {
+
+    private static final int MIN_PASSWORD_LENGTH = 8;
+
+    private static final Set<String> COMMON_PASSWORDS = Set.of(
+        "password1", "password123", "qwerty123", "welcome1", "welcome123", "letmein1",
+        "letmein123", "admin1234", "iloveyou1", "monkey123", "football1", "baseball1", "dragon123",
+        "master123", "sunshine1", "princess1", "trustno1", "superman1", "changeme1",
+        "passw0rd", "abc123456", "whatever1", "starwars1", "shadow123", "michael1"
+    );
 
     @Autowired private UserRepository userRepo;
     @Autowired private JwtUtil jwtUtil;
@@ -21,14 +31,17 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String,String> body) {
         //takes Json request and parses it into a map
-        //also shoyld have a name and birthday and about me 
         String username = body.get("username");
         String email = body.get("email");
         String password  = body.get("password");
 
         if (username == null || username.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "Username is required"));
         if (email == null || email.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
-        if (password == null || password.length() < 6) return ResponseEntity.badRequest().body(Map.of("error", "Password must be at least 6 characters"));
+        if (password == null || password.length() < MIN_PASSWORD_LENGTH) return ResponseEntity.badRequest().body(Map.of("error", "Password must be at least " + MIN_PASSWORD_LENGTH + " characters"));
+        if (!password.chars().anyMatch(Character::isUpperCase) || !password.chars().anyMatch(Character::isDigit)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Password must contain at least one uppercase letter and one number"));
+        }
+        if (COMMON_PASSWORDS.contains(password.toLowerCase())) return ResponseEntity.badRequest().body(Map.of("error", "This password is too common. Please choose a different one"));
 
         //check if the user already exists
         if(userRepo.existsByUsername(username)) return ResponseEntity.badRequest().body(Map.of("error", "This username is already taken."));
