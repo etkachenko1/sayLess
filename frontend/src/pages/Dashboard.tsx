@@ -4,6 +4,7 @@ import Sidebar from "../components/SideBar";
 import TaskList from "../components/TaskList";
 import TaskModal from "../components/TaskModal";
 import FriendsModal from "../components/FriendsModal";
+import ProfileModal from "../components/ProfileModal";
 import { fetchUserProfile } from "../utils/fetchUserProfile"
 import type { UserProfile } from "../utils/fetchUserProfile";
 import { API_URL } from "../config/api";
@@ -51,6 +52,7 @@ export default function Dashboard(){
     const [deadline, setDeadline] = useState("")
     const [editingTask, setEditingTask] = useState<Task | null> (null);
     const [ShowFriendsModal, setShowFriendsModal] = useState(false);
+    const [showProfileModal, setShowProfileModal] = useState(false);
     const [friends, setFriends] = useState<{id: string; username: string}[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const token = localStorage.getItem("token")
@@ -179,6 +181,20 @@ export default function Dashboard(){
         fetchTasks()
     }
 
+    const updateProfile = async (bio: string, profilePic: string): Promise<string | null> => {
+        const res = await fetch(`${API}/users/me`, {
+            method: "PUT",
+            headers,
+            body: JSON.stringify({ bio: bio || null, profilePic: profilePic || null }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            return data.error || "Failed to update profile";
+        }
+        setUser(data);
+        return null;
+    }
+
     useEffect(() => {
         fetchTasks();
         fetchNotifications();
@@ -248,7 +264,7 @@ export default function Dashboard(){
         username={user?.username || "User"}
         bio = {user?.bio}
         profilePic = {user?.profilePic} 
-        onEditProfile={() => {}}/>
+        onEditProfile={() => setShowProfileModal(true)}/>
         <main className="flex-1 bg-gray-800 p-6 rounded-2xl shadow-lg">
           <TaskList
             tasks={tasks}
@@ -283,9 +299,17 @@ export default function Dashboard(){
       friends={friends}
       />
 
-      <FriendsModal 
+      <FriendsModal
       isOpen={ShowFriendsModal}
       onClose={() => setShowFriendsModal(false)}/>
+
+      <ProfileModal
+      isOpen={showProfileModal}
+      onClose={() => setShowProfileModal(false)}
+      bio={user?.bio}
+      profilePic={user?.profilePic}
+      onSubmit={updateProfile}
+      />
     </div>
   );
 }
