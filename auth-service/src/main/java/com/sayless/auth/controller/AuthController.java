@@ -30,6 +30,7 @@ public class AuthController {
     @Autowired private UserRepository userRepo;
     @Autowired private JwtUtil jwtUtil;
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private static final String DUMMY_HASH_FOR_TIMING_SAFETY = new BCryptPasswordEncoder().encode("dummy-password-for-timing-safety-check");
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String,String> body) {
@@ -67,10 +68,10 @@ public class AuthController {
         if (username == null || username.isBlank() || password == null || password.isBlank())
             return ResponseEntity.status(401).body(Map.of("error", "Username and password are required"));
 
-        var query = userRepo.findByUsername(username);
-        if(query.isEmpty()) return ResponseEntity.status(401).body(Map.of("error","This username does not exist" ));
-        User u = query.get();
-        if(!passwordEncoder.matches(password, u.getPassword())) return ResponseEntity.status(401).body(Map.of("error","Invalid credentials"));
+        User u = userRepo.findByUsername(username).orElse(null);
+        String hashToCheck = (u != null) ? u.getPassword() : DUMMY_HASH_FOR_TIMING_SAFETY;
+        boolean passwordMatches = passwordEncoder.matches(password, hashToCheck);
+        if (u == null || !passwordMatches) return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
 
         String token = jwtUtil.generateToken(u.getId());
         return ResponseEntity.ok(Map.of("token", token));
