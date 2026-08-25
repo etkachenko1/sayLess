@@ -1,8 +1,12 @@
+import json
 import os
+import time
+from collections import defaultdict
 from fastapi import APIRouter, Request, HTTPException, status, Response
 import httpx
 from dotenv import load_dotenv
 from utils.jwt_utils import verify_jwt
+from utils.limiter import limiter
 
 load_dotenv()
 
@@ -61,6 +65,41 @@ async def forward_request(service_name: str, path: str, request: Request):
         status_code=res.status_code,
         headers=dict(res.headers),
     )
+
+_LOGIN_FAILURE_WINDOW_SECONDS = 60
+_LOGIN_FAILURE_LIMIT = 10
+_login_failures_by_username: dict[str, list[float]] = defaultdict(list)
+
+def _normalize_username(username: str) -> str:
+    return username.strip().lower()
+
+def _is_locked_out(key: str) -> bool:
+    now = time.monotonic()
+    attempts = _login_failures_by_username[key]
+    attempts[:] = [t for t in attempts if now - t < _LOGIN_FAILURE_WINDOW_SECONDS]
+    return len(attempts) >= _LOGIN_FAILURE_LIMIT
+
+def _record_login_failure(key: str) -> None:
+    _login_failures_by_username[key].append(time.monotonic())
+
+@router.post("/auth/login")
+@limiter.limit("10/minute")
+async def proxy_login(request: Request):
+    body = await request.body()
+    username = None
+    try:
+        username = json.loads(body).get("username")
+    except (ValueError, AttributeError):
+        pass
+
+    key = _normalize_username(username) if username else None
+    if key and _is_locked_out(key):
+        raise HTTPException(status_code=429, detail="Too many failed login attempts for this account. Try again later.")
+
+    response = await forward_request("auth", "login", request)
+    if key and response.status_code == status.HTTP_401_UNAUTHORIZED:
+        _record_login_failure(key)
+    return response
 
 @router.api_route("/{service_name}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def proxy_collection(service_name: str, request: Request):
