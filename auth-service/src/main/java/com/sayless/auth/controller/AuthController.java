@@ -10,12 +10,15 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; //to hash passwords
 import java.util.Map; //to read JSON request bodies as key-value pairs
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @RestController //tells SpringBoot that this class handles HTTP requests and will return JSON and HTML
 @RequestMapping("/auth")
 public class AuthController {
 
     private static final int MIN_PASSWORD_LENGTH = 8;
+
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w.+-]+@[\\w-]+\\.[a-zA-Z]{2,}$");
 
     private static final Set<String> COMMON_PASSWORDS = Set.of(
         "password1", "password123", "qwerty123", "welcome1", "welcome123", "letmein1",
@@ -37,6 +40,7 @@ public class AuthController {
 
         if (username == null || username.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "Username is required"));
         if (email == null || email.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
+        if (!EMAIL_PATTERN.matcher(email).matches()) return ResponseEntity.badRequest().body(Map.of("error", "Please enter a valid email address"));
         if (password == null || password.length() < MIN_PASSWORD_LENGTH) return ResponseEntity.badRequest().body(Map.of("error", "Password must be at least " + MIN_PASSWORD_LENGTH + " characters"));
         if (!password.chars().anyMatch(Character::isUpperCase) || !password.chars().anyMatch(Character::isDigit)) {
             return ResponseEntity.badRequest().body(Map.of("error", "Password must contain at least one uppercase letter and one number"));

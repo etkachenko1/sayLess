@@ -44,6 +44,26 @@ class AuthControllerRegistrationTest {
     private JwtUtil jwtUtil;
 
     @Test
+    void register_emailWithNoAtSign_isRejected() throws Exception {
+        mockMvc.perform(post("/auth/register")
+                        .contentType("application/json")
+                        .content("{\"username\":\"newuser\",\"email\":\"user1\",\"password\":\"CorrectHorseBattery9\"}"))
+                .andExpect(status().isBadRequest());
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_emailWithNoTld_isRejected() throws Exception {
+        mockMvc.perform(post("/auth/register")
+                        .contentType("application/json")
+                        .content("{\"username\":\"newuser\",\"email\":\"user1@example\",\"password\":\"CorrectHorseBattery9\"}"))
+                .andExpect(status().isBadRequest());
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
     void register_passwordUnderMinLength_isRejected() throws Exception {
         mockMvc.perform(post("/auth/register")
                         .contentType("application/json")
