@@ -2,6 +2,8 @@ import { useState } from "react"
 import type { ChangeEvent } from "react"
 import logo from "./assets/sayless-logo.png"
 import { API_URL } from "./config/api"
+import { getPasswordRequirements, isPasswordValid } from "./utils/passwordRules"
+import { isValidEmail } from "./utils/emailRules"
 
 
 
@@ -46,7 +48,8 @@ function Auth() {
 
         if (!registerForm.username.trim()) { setError("Username is required"); return; }
         if (!registerForm.email.trim()) { setError("Email is required"); return; }
-        if (registerForm.password.length < 6) { setError("Password must be at least 6 characters"); return; }
+        if (!isValidEmail(registerForm.email)) { setError("Please enter a valid email address"); return; }
+        if (!isPasswordValid(registerForm.password)) { setError("Please meet all the password requirements below"); return; }
 
         try {
             //send HTTP Post requesr to backend
@@ -214,14 +217,24 @@ function Auth() {
               onChange={handleChangeRegister}
               className="w-full p-3 mb-3 border border-gray-600 bg-gray-700 rounded-lg focus:ring-2 focus:ring-red-700 text-white placeholder-gray-400"
             />
+            {registerForm.email.length > 0 && !isValidEmail(registerForm.email) && (
+              <p className="text-xs text-red-400 mt-1 mb-2 leading-tight">Please enter a valid email address</p>
+            )}
             <input
               name="password"
               type="password"
               placeholder="Password"
               value={registerForm.password}
               onChange={handleChangeRegister}
-              className="w-full p-3 mb-4 border border-gray-600 bg-gray-700 rounded-lg focus:ring-2 focus:ring-red-700 text-white placeholder-gray-400"
+              className="w-full p-3 mb-2 border border-gray-600 bg-gray-700 rounded-lg focus:ring-2 focus:ring-red-700 text-white placeholder-gray-400"
             />
+            <ul className="text-xs mb-4 space-y-1">
+              {getPasswordRequirements(registerForm.password).map((req) => (
+                <li key={req.label} className={req.met ? "text-green-400" : "text-gray-400"}>
+                  {req.met ? "✓" : "○"} {req.label}
+                </li>
+              ))}
+            </ul>
             <button
               onClick={register}
               className="w-full bg-red-700 hover:bg-red-600 text-white py-2 rounded-lg font-semibold transition"
