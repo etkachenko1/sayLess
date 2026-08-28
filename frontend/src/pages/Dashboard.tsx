@@ -215,16 +215,22 @@ export default function Dashboard(){
     }
 
     useEffect(() => {
+        if (!token) {
+            window.location.href = "/";
+            return;
+        }
         fetchTasks();
         fetchNotifications();
         fetchUserProfile().then(profile => {
+            if (!profile) {
+                window.location.href = "/";
+                return;
+            }
             setUser(profile);
-            if (profile) {
             setFriends(prev => [
                 ...prev.filter(f => f.id !== profile.id),
                 { id: profile.id, username: profile.username }
             ]);
-            }
         });
         }, []);
 
@@ -260,6 +266,23 @@ export default function Dashboard(){
         return () => disconnectRealtime();
         }, []);
 
+    useEffect(() => {
+        const handlePageShow = (event: PageTransitionEvent) => {
+            if (event.persisted && !localStorage.getItem("token")) {
+                window.location.href = "/";
+            }
+        };
+        window.addEventListener("pageshow", handlePageShow);
+        return () => window.removeEventListener("pageshow", handlePageShow);
+    }, []);
+
+    if (!token || !user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-100">
+                Loading...
+            </div>
+        );
+    }
 
     return (
          <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
