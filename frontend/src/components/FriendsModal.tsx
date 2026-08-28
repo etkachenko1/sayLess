@@ -29,7 +29,7 @@ export default function FriendsModal({ isOpen, onClose }: FriendsModalProps) {
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<UserResult[]>([]);
   const token = localStorage.getItem("token");
-  const myId = JSON.parse(atob(token!.split(".")[1])).sub;
+  const myId = token ? JSON.parse(atob(token.split(".")[1])).sub : null;
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
@@ -81,7 +81,12 @@ export default function FriendsModal({ isOpen, onClose }: FriendsModalProps) {
   };
 
   useEffect(() => {
-    if (isOpen) fetchFriends();
+    if (isOpen) {
+      fetchFriends();
+    } else {
+      setSearch("");
+      setSearchResults([]);
+    }
   }, [isOpen]);
 
   useEffect(() => {
