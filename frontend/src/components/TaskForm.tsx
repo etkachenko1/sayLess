@@ -38,8 +38,10 @@ export default function TaskForm({
         value={title}
         onChange={(e) => onTitleChange(e.target.value)}
         placeholder="Task title"
+        maxLength={150}
         className="border border-gray-600 bg-gray-700 text-white rounded-lg p-3 focus: ring-red-500"
       />
+      <p className="text-xs text-gray-500 mt-1">{title.length}/150</p>
       </div>
       <div className="flex flex-col">
       <label className="text-sm font-medium mb-1 text-gray-300">Assign to (defaults to me)</label>
@@ -55,12 +57,15 @@ export default function TaskForm({
       </div>
       <div className="flex flex-col col-span-2">
         <label className="text-sm font-medium mb-1 text-gray-300">Description</label>
-        <input
+        <textarea
         value={description}
         onChange={(e) => onDescriptionChange(e.target.value)}
         placeholder="Description"
-        className="border border-gray-600 bg-gray-700 text-white rounded-lg p-3"
+        maxLength={1000}
+        rows={3}
+        className="border border-gray-600 bg-gray-700 text-white rounded-lg p-3 resize-y"
       />
+      <p className="text-xs text-gray-500 mt-1">{description.length}/1000</p>
       </div>
       <div className="flex flex-col col-span-2">
         <label className="text-sm font-medium mb-1 text-gray-300">Deadline</label>

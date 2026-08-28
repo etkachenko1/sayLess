@@ -19,17 +19,21 @@ import org.springframework.web.bind.annotation.*; //annotations to declare REST 
 import org.springframework.http.ResponseEntity;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.List;
 
 @RestController //marks this as Rest api controller, so Spring will automatically expose methods as endpoints
 @RequestMapping("/tasks") //all endpoints here will begin with /tasks
 public class TaskController {
+    private static final int MAX_TITLE_LENGTH = 150;
+    private static final int MAX_DESCRIPTION_LENGTH = 1000;
+
     //MongoDb repo for Task collection
     private final TaskRepository repo;
     private final UserClient userClient;
     private final TaskEventProducer eventProducer;
- 
+
     public TaskController(TaskRepository repo, UserClient userClient, TaskEventProducer eventProducer) {
         this.repo = repo;
         this.userClient = userClient;
@@ -39,6 +43,19 @@ public class TaskController {
     //helper to exctract userId stored as principal in jwtAuthFilter from token
     private String uid(Authentication auth) {
         return (String) auth.getPrincipal();
+    }
+
+    private String validateTitleAndDescription(String title, String description, boolean titleRequired) {
+        if (titleRequired && (title == null || title.isBlank())) {
+            return "Title is required";
+        }
+        if (title != null && title.length() > MAX_TITLE_LENGTH) {
+            return "Title must be " + MAX_TITLE_LENGTH + " characters or fewer";
+        }
+        if (description != null && description.length() > MAX_DESCRIPTION_LENGTH) {
+            return "Description must be " + MAX_DESCRIPTION_LENGTH + " characters or fewer";
+        }
+        return null;
     }
 
     //GET //tasks -> all tasks createdby or assignedTo user
@@ -78,7 +95,12 @@ public class TaskController {
 
     //POST /tasks
     @PostMapping
-    public Task createTask(@RequestBody TaskCreateDto dto, Authentication auth) {
+    public ResponseEntity<?> createTask(@RequestBody TaskCreateDto dto, Authentication auth) {
+        String validationError = validateTitleAndDescription(dto.title(), dto.description(), true);
+        if (validationError != null) {
+            return ResponseEntity.badRequest().body(Map.of("error", validationError));
+        }
+
         String me = uid(auth);
         Task t = new Task();
         t.setTitle(dto.title());
@@ -105,7 +127,7 @@ public class TaskController {
                 saved.getUpdatedAt()
             )
         );
-        return saved;
+        return ResponseEntity.ok(saved);
     }
 
     //post /tasks/assign
@@ -152,6 +174,10 @@ public class TaskController {
             if(!t.getCreatedBy().equals(me)) {
                 return ResponseEntity.status(403).build();
 
+            }
+            String validationError = validateTitleAndDescription(dto.title(), dto.description(), false);
+            if (validationError != null) {
+                return ResponseEntity.badRequest().body(Map.of("error", validationError));
             }
             String previousAssignedTo = t.getAssignedTo();
             if(dto.title()!= null)  t.setTitle(dto.title());
