@@ -19,12 +19,12 @@ export default function Navbar({onCreateTaskClick, onFriendsClick, notifications
 
 
     return (
-        <nav className="flex items-center justify-between bg-gray-900 shadow px-6 py-3">
+        <nav className="flex flex-wrap items-center justify-between gap-3 bg-gray-900 shadow px-6 py-3">
             <div className="flex items-center space-x-3">
                 <span className="text-2xl font-bold text-red-700 tracking-wide"> SayLess </span>
                 <img src = {logo} alt = "SayLess Logo" className="h-10 w-auto"/>
              </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center flex-wrap gap-3">
                 <button onClick={onCreateTaskClick} className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-600">
                     Create Task</button>
                 <button onClick={onFriendsClick} className="bg-gray-700 text-gray-200 px-4 py-2 rounded-lg hover: bg-gray-300">

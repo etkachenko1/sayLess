@@ -57,7 +57,7 @@ export default function NotificationBell({ notifications, onMarkAllRead, onDelet
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-gray-800 border border-gray-700 rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto">
+        <div className="fixed left-4 right-4 sm:absolute sm:left-auto sm:right-0 mt-2 sm:w-80 bg-gray-800 border border-gray-700 rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto">
           <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
             <span className="font-semibold text-gray-200">Notifications</span>
             {notifications.length > 0 && (
@@ -77,7 +77,7 @@ export default function NotificationBell({ notifications, onMarkAllRead, onDelet
             notifications.map((n) => (
               <div
                 key={n.id}
-                className="group px-4 py-3 border-b border-gray-700 last:border-0 flex items-start justify-between gap-2"
+                className="px-4 py-3 border-b border-gray-700 last:border-0 flex items-start justify-between gap-2"
               >
                 <div>
                   <p className="text-sm text-gray-200">{n.message}</p>
@@ -85,7 +85,7 @@ export default function NotificationBell({ notifications, onMarkAllRead, onDelet
                 </div>
                 <button
                   onClick={() => onDelete(n.id)}
-                  className="text-gray-500 hover:text-gray-200 opacity-0 group-hover:opacity-100 shrink-0"
+                  className="text-gray-500 hover:text-gray-200 shrink-0"
                   aria-label="Dismiss notification"
                 >
                   <X className="h-4 w-4" />

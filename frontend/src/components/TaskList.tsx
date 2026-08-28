@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {CheckCircle, Trash2, CalendarDays, User, Clock, Edit2, Brain} from "lucide-react"
 import { API_URL } from "../config/api"
+import { getIdFromToken } from "../utils/getIdFromToken"
 
 interface Task {
   id: string;
@@ -33,6 +34,7 @@ export default function TaskList({
 
   const [predictions, setPredictions] = useState<Record<string, number>>({});
   const token = localStorage.getItem("token");
+  const myId = getIdFromToken();
 
   const handlePredict = async (task: Task) => {
     if(!token) return;
@@ -78,22 +80,35 @@ export default function TaskList({
   const formatDate = (dateString?: string) => {
     if (!dateString) return "—";
     const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleString(undefined, {
       month: "short",
       day: "numeric",
       year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
     });
   };
 
+  const sortedTasks = [...tasks].sort((a, b) => {
+    const aDone = a.status === "DONE";
+    const bDone = b.status === "DONE";
+    if (aDone !== bDone) return aDone ? 1 : -1;
+
+    if (!a.deadline && !b.deadline) return 0;
+    if (!a.deadline) return 1;
+    if (!b.deadline) return -1;
+    return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+  });
+
 return (
     <ul className="space-y-4">
-      {tasks.map((t) => {
+      {sortedTasks.map((t) => {
         const overdue = isOverdue(t.deadline, t.status);
 
         return (
           <li
             key={t.id}
-            className={`group relative border border-gray-700 rounded-xl flex justify-between items-start transition-all duration-200 overflow-hidden ${
+            className={`group relative border border-gray-700 rounded-xl flex flex-col transition-all duration-200 overflow-hidden ${
               t.status === "DONE"
                 ? "bg-gray-700/60 opacity-80"
                 : "bg-gray-800/70 hover:bg-gray-700/70"
@@ -107,9 +122,9 @@ return (
             />
 
             {/* Content */}
-            <div className="flex-1 p-5 pl-6">
-              <div className="flex items-center gap-2">
-                <p className="text-lg font-semibold text-white">{t.title}</p>
+            <div className="min-w-0 p-5 pl-6">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-lg font-semibold text-white break-words min-w-0">{t.title}</p>
                 <span
                   className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                     t.status === "DONE"
@@ -128,10 +143,10 @@ return (
               </div>
 
               {t.description && (
-                <p className="text-sm text-gray-400 mt-1">{t.description}</p>
+                <p className="text-sm text-gray-400 mt-1 break-words">{t.description}</p>
               )}
 
-              <div className="flex items-center gap-4 mt-3 text-sm text-gray-400">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-gray-400">
                 {t.deadline && (
                   <span
                     className={`flex items-center gap-1 ${
@@ -159,16 +174,16 @@ return (
                     </span>
                   </span>
                 )}
-                {predictions[t.id] !== undefined && (
-                  <div className="mt-2 text-sm text-purple-300 font-medium">
-                    Probability: {(predictions[t.id] * 100).toFixed(1)}%
-                    </div> )}
-
               </div>
+              {predictions[t.id] !== undefined && (
+                <div className="mt-2 text-sm text-purple-300 font-medium">
+                  Probability: {(predictions[t.id] * 100).toFixed(1)}%
+                </div>
+              )}
             </div>
 
             {/* Buttons */}
-            <div className="flex items-center gap-2 pr-5 pt-5">
+            <div className="flex items-center flex-wrap gap-2 px-5 pb-5 pl-6">
                 <button
                   onClick={() => onToggleStatus(t.id, t.status)}
                   className={`flex items-center gap-1 text-sm text-white transition-colors px-3 py-1.5 rounded-lg shadow-sm ${
@@ -181,23 +196,27 @@ return (
                   {t.status === "DONE" ? "Undo" : "Done"}
                 </button>
 
-                <button
-                  onClick={() => onEdit(t)}
-                  className="flex items-center gap-1 text-sm text-white bg-blue-600/90 hover:bg-blue-500 transition-colors px-3 py-1.5 rounded-lg shadow-sm"
-                >
-                <Edit2 className="h-4 w-4"/> Edit
-                </button>
+                {t.createdById === myId && (
+                  <button
+                    onClick={() => onEdit(t)}
+                    className="flex items-center gap-1 text-sm text-white bg-blue-600/90 hover:bg-blue-500 transition-colors px-3 py-1.5 rounded-lg shadow-sm"
+                  >
+                  <Edit2 className="h-4 w-4"/> Edit
+                  </button>
+                )}
                 <button
                 onClick={() => handlePredict(t)}
                 className="flex items-center gap-1 text-sm text-white bg-purple-600/90 hover:bg-purple-500 transition-colors px-3 py-1.5 rounded-lg shadow-sm"
                 >
                   <Brain className="h-4 w-4" /> Predict </button>
-              <button
-                onClick={() => onDelete(t.id)}
-                className="flex items-center gap-1 text-sm text-white bg-red-700/90 hover:bg-red-600 transition-colors px-3 py-1.5 rounded-lg shadow-sm"
-              >
-                <Trash2 className="h-4 w-4" /> Delete
-              </button>
+              {t.createdById === myId && (
+                <button
+                  onClick={() => onDelete(t.id)}
+                  className="flex items-center gap-1 text-sm text-white bg-red-700/90 hover:bg-red-600 transition-colors px-3 py-1.5 rounded-lg shadow-sm"
+                >
+                  <Trash2 className="h-4 w-4" /> Delete
+                </button>
+              )}
             </div>
           </li>
         );

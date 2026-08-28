@@ -55,6 +55,7 @@ export default function Dashboard(){
     const [showProfileModal, setShowProfileModal] = useState(false);
     const [friends, setFriends] = useState<{id: string; username: string}[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [taskError, setTaskError] = useState<string>("");
     const token = localStorage.getItem("token")
 
     const headers = {
@@ -110,15 +111,24 @@ export default function Dashboard(){
         const res = await fetch(`${API_URL}/friends/accepted`, { headers });
         if (res.ok) {
         const data = await res.json();
-        const token = localStorage.getItem("token");
-        const myId = JSON.parse(atob(token!.split(".")[1])).sub;
+        const myId = token ? JSON.parse(atob(token.split(".")[1])).sub : null;
         const updated = [{ id: myId, username: "Me" }, ...data];
-        setFriends(updated);        
+        setFriends(updated);
+        }
+    };
+
+    const parseErrorMessage = async (res: Response, fallback: string): Promise<string> => {
+        try {
+            const data = await res.json();
+            return data.error || fallback;
+        } catch {
+            return fallback;
         }
     };
 
     const createTask = async (): Promise<boolean> => {
         if(!title.trim()) return false;
+        setTaskError("");
         const res = await fetch(`${API}/tasks`, {
             method: "POST",
             headers,
@@ -132,14 +142,15 @@ export default function Dashboard(){
             return true;
         }
         else {
-            console.error("Task creation failed: ", res.statusText);
+            setTaskError(await parseErrorMessage(res, "Failed to create task"));
             return false;
         }
-        
+
     };
 
     const updateTask = async(): Promise<boolean> => {
         if(!editingTask) return false;
+        setTaskError("");
 
         const res= await fetch(`${API}/tasks/${editingTask.id}`, {
             method: "PUT",
@@ -161,23 +172,31 @@ export default function Dashboard(){
             setDeadline("");
             return true;
         } else {
-            console.error("Task update failed", res.statusText);
+            setTaskError(await parseErrorMessage(res, "Only the task's creator can edit it"));
             return false;
         }
     }
 
     const markDone = async ( id: string, currentStatus: string) => {
+        setTaskError("");
         const newStatus = currentStatus === "DONE" ? "TODO": "DONE";
-        await fetch (`${API}/tasks/${id}/status`, {
+        const res = await fetch (`${API}/tasks/${id}/status`, {
             method: "PATCH",
             headers,
             body: JSON.stringify({status: newStatus}),
         })
+        if (!res.ok) {
+            setTaskError(await parseErrorMessage(res, "Failed to update task status"));
+        }
         fetchTasks()
     }
 
     const deleteTask = async (id: string) => {
-        await fetch(`${API}/tasks/${id}`, {method: "DELETE", headers})
+        setTaskError("");
+        const res = await fetch(`${API}/tasks/${id}`, {method: "DELETE", headers})
+        if (!res.ok) {
+            setTaskError(await parseErrorMessage(res, "Only the task's creator can delete it"));
+        }
         fetchTasks()
     }
 
@@ -259,13 +278,18 @@ export default function Dashboard(){
         onDeleteNotification={deleteNotification}
         onClearAllNotifications={clearAllNotifications}
         />
-      <div className="flex flex-1 p-6 space-x-6">
-        <Sidebar 
+      <div className="flex flex-col md:flex-row flex-1 p-6 gap-6">
+        <Sidebar
         username={user?.username || "User"}
         bio = {user?.bio}
-        profilePic = {user?.profilePic} 
+        profilePic = {user?.profilePic}
         onEditProfile={() => setShowProfileModal(true)}/>
-        <main className="flex-1 bg-gray-800 p-6 rounded-2xl shadow-lg">
+        <main className="flex-1 min-w-0 bg-gray-800 p-6 rounded-2xl shadow-lg">
+          {taskError && (
+            <div className="mb-4 p-2 text-sm text-red-400 bg-red-900/30 border border-red-700 rounded">
+              {taskError}
+            </div>
+          )}
           <TaskList
             tasks={tasks}
             loading={loading}
