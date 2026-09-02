@@ -23,6 +23,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // Regression coverage for the auth-service IDOR fix: PUT /users/{id} where any caller could overwrite
@@ -113,5 +114,43 @@ class UserControllerSecurityTest {
                 .andExpect(status().isBadRequest());
 
         verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void getUserById_forSomeoneElse_returnsOnlyIdAndUsername() throws Exception {
+        User target = new User("bob", "bob@example.com", "hashed");
+        target.setId("bob-id");
+        when(userRepository.findById("bob-id")).thenReturn(Optional.of(target));
+
+        mockMvc.perform(get("/users/bob-id")
+                        .header("Authorization", "Bearer " + tokenFor("someone-else-id")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("bob"))
+                .andExpect(jsonPath("$.email").doesNotExist());
+    }
+
+    @Test
+    void getUserById_withNoToken_returnsOnlyIdAndUsername() throws Exception {
+        User target = new User("bob", "bob@example.com", "hashed");
+        target.setId("bob-id");
+        when(userRepository.findById("bob-id")).thenReturn(Optional.of(target));
+
+        mockMvc.perform(get("/users/bob-id"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("bob"))
+                .andExpect(jsonPath("$.email").doesNotExist());
+    }
+
+    @Test
+    void getUserById_forSelf_returnsFullProfile() throws Exception {
+        User self = new User("bob", "bob@example.com", "hashed");
+        self.setId("bob-id");
+        when(userRepository.findById("bob-id")).thenReturn(Optional.of(self));
+
+        mockMvc.perform(get("/users/bob-id")
+                        .header("Authorization", "Bearer " + tokenFor("bob-id")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("bob"))
+                .andExpect(jsonPath("$.email").value("bob@example.com"));
     }
 }

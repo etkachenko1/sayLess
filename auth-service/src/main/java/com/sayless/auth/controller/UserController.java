@@ -30,9 +30,15 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable String id) {
+    public ResponseEntity<?> getUserById(@PathVariable String id, Authentication auth) {
         Optional<User> user = repo.findById(id);
-        return user.isPresent()?ResponseEntity.ok(user.get()):ResponseEntity.notFound().build();
+        if (user.isEmpty()) return ResponseEntity.notFound().build();
+
+        boolean isSelf = auth != null && id.equals(auth.getPrincipal());
+        if (isSelf) return ResponseEntity.ok(user.get());
+
+        User u = user.get();
+        return ResponseEntity.ok(Map.of("id", u.getId(), "username", u.getUsername()));
     }
 
     //callers may only ever update their own profile - id comes from the token, never from the path
