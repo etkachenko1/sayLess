@@ -20,7 +20,7 @@ public class KafkaConsumerConfig {
     private void configureValueDeserializer(DefaultKafkaConsumerFactory<?, ?> consumerFactory) {
         ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
         JsonDeserializer<Object> valueDeserializer = new JsonDeserializer<>(objectMapper);
-        valueDeserializer.trustedPackages("*");
+        valueDeserializer.trustedPackages("com.sayless.notification.event");
         ((DefaultKafkaConsumerFactory<Object, Object>) consumerFactory).setValueDeserializer(valueDeserializer);
     }
 }
