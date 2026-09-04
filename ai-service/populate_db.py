@@ -2,9 +2,10 @@
 AI population script
 populate_db.py — Seed MongoDB with synthetic task data for AI model training.
 
-Usage:
-    python populate_db.py           # append data (skips existing usernames)
-    python populate_db.py --clear   # drop users / tasks / friends first
+Usage (requires ALLOW_DB_SEEDING=true - refuses to run otherwise, since this
+inserts real accounts and is only meant for a local/dev database):
+    ALLOW_DB_SEEDING=true python populate_db.py           # append data (skips existing usernames)
+    ALLOW_DB_SEEDING=true python populate_db.py --clear   # drop users / tasks / friends first
 
 Generates 250 tasks across 10 users with varied completion profiles so that
 LogisticRegression has meaningful signal in every feature:
@@ -13,14 +14,24 @@ LogisticRegression has meaningful signal in every feature:
 """
 
 import os
+import secrets
 import sys
 import random
+import bcrypt
 from datetime import datetime, timezone, timedelta
 from bson import ObjectId
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
 load_dotenv()
+
+if os.getenv("ALLOW_DB_SEEDING") != "true":
+    print(
+        "Refusing to run: this script inserts real user accounts and is only meant "
+        "for a local/dev database. Set ALLOW_DB_SEEDING=true to run it, e.g.:\n\n"
+        "  docker compose exec -e ALLOW_DB_SEEDING=true ai-service python populate_db.py\n"
+    )
+    sys.exit(1)
 
 MONGO_URI   = os.getenv("MONGO_URI", "mongodb://localhost:27017/sayless")
 DB_NAME     = os.getenv("MONGO_DB", "sayless")
@@ -44,8 +55,11 @@ def _days_from_now(n):
 # Each profile controls: completion probability and how many tasks to generate.
 # Varying these produces the user_completion_rate variance the model needs.
 
-# Dummy BCrypt hash for "test123" — valid for Spring Security BCryptPasswordEncoder
-BCRYPT_DUMMY = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lh0."
+def _random_password() -> str:
+    return secrets.token_urlsafe(12)
+
+def _hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 USERS = [
     {"username": "alex_hunter",   "email": "alex@sayless.dev",    "bio": "Gets things done.",       "profile": "high"},
@@ -223,24 +237,31 @@ def populate():
     # ── users ──
     user_ids: list[str] = []
     new_users = 0
+    generated_credentials: list[tuple[str, str]] = []
     for u in USERS:
         existing = db["users"].find_one({"username": u["username"]})
         if existing:
             user_ids.append(str(existing["_id"]))
             continue
         oid = ObjectId()
+        password = _random_password()
         db["users"].insert_one({
             "_id":        oid,
             "username":   u["username"],
             "email":      u["email"],
-            "password":   BCRYPT_DUMMY,
+            "password":   _hash_password(password),
             "bio":        u["bio"],
             "profilePic": None,
         })
         user_ids.append(str(oid))
+        generated_credentials.append((u["username"], password))
         new_users += 1
 
     print(f"Users ready : {len(user_ids)} total  ({new_users} newly inserted)")
+    if generated_credentials:
+        print("Generated passwords for newly inserted users (shown once, not stored anywhere):")
+        for username, password in generated_credentials:
+            print(f"  {username}: {password}")
 
     # map ObjectId string → profile
     uid_to_profile: dict[str, str] = {}
