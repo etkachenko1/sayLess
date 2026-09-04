@@ -16,6 +16,9 @@ spec:
         - name: auth-service
           image: auth-service:latest
           imagePullPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
           ports:
             - containerPort: 8081
           readinessProbe:

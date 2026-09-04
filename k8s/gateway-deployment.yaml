@@ -16,6 +16,9 @@ spec:
         - name: gateway-service
           image: gateway-service:latest
           imagePullPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
           ports:
             - containerPort: 8080
           env:

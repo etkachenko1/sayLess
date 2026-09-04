@@ -7,5 +7,8 @@ RUN mvn package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
+RUN addgroup -S app && adduser -S app -G app
 COPY --from=build /app/target/*.jar app.jar
+RUN chown app:app app.jar
+USER app
 ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
