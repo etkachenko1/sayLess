@@ -235,7 +235,12 @@ public class TaskController {
             if(!t.getCreatedBy().equals(me) && !t.getAssignedTo().equals(me)) {
                 return ResponseEntity.status(403).build();}
 
-            Task.Status newStatus =  Task.Status.valueOf(dto.status());
+            Task.Status newStatus;
+            try {
+                newStatus = Task.Status.valueOf(dto.status());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid status: " + dto.status()));
+            }
             t.setStatus(newStatus);
             t.setUpdatedAt(Instant.now());
             Task saved = repo.save(t);
