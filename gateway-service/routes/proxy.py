@@ -1,8 +1,7 @@
 import json
 import os
-import time
-from collections import defaultdict
 from urllib.parse import unquote
+from cachetools import TTLCache
 from fastapi import APIRouter, Request, HTTPException, status, Response
 import httpx
 from dotenv import load_dotenv
@@ -84,19 +83,39 @@ async def forward_request(service_name: str, path: str, request: Request):
 
 _LOGIN_FAILURE_WINDOW_SECONDS = 60
 _LOGIN_FAILURE_LIMIT = 10
-_login_failures_by_username: dict[str, list[float]] = defaultdict(list)
+_LOGIN_FAILURE_MAX_TRACKED_KEYS = 10_000
+
+# keyed on (username, ip) rather than username alone, so a known username can't
+# be used to lock out a victim on its own. still a mitigation
+# TTLCache expires entries on their own (each write
+# resets that key's window) and evicts the least-recently-used entry once
+# maxsize is hit
+_login_failures: TTLCache = TTLCache(maxsize=_LOGIN_FAILURE_MAX_TRACKED_KEYS, ttl=_LOGIN_FAILURE_WINDOW_SECONDS)
+
+# only trust X-Forwarded-For when the direct connection comes from this address
+# unset by default so an unconfigured deployment never
+# trusts a client-supplied header for something security-relevant
+_TRUSTED_PROXY_IP = os.getenv("TRUSTED_PROXY_IP")
 
 def _normalize_username(username: str) -> str:
     return username.strip().lower()
 
-def _is_locked_out(key: str) -> bool:
-    now = time.monotonic()
-    attempts = _login_failures_by_username[key]
-    attempts[:] = [t for t in attempts if now - t < _LOGIN_FAILURE_WINDOW_SECONDS]
-    return len(attempts) >= _LOGIN_FAILURE_LIMIT
+def _client_ip(request: Request) -> str:
+    direct_ip = request.client.host if request.client else "unknown"
+    if _TRUSTED_PROXY_IP and direct_ip == _TRUSTED_PROXY_IP:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+    return direct_ip
 
-def _record_login_failure(key: str) -> None:
-    _login_failures_by_username[key].append(time.monotonic())
+def _lockout_key(username: str, request: Request) -> tuple[str, str]:
+    return (_normalize_username(username), _client_ip(request))
+
+def _is_locked_out(key: tuple[str, str]) -> bool:
+    return _login_failures.get(key, 0) >= _LOGIN_FAILURE_LIMIT
+
+def _record_login_failure(key: tuple[str, str]) -> None:
+    _login_failures[key] = _login_failures.get(key, 0) + 1
 
 @router.post("/auth/login")
 @limiter.limit("10/minute")
@@ -108,7 +127,7 @@ async def proxy_login(request: Request):
     except (ValueError, AttributeError):
         pass
 
-    key = _normalize_username(username) if username else None
+    key = _lockout_key(username, request) if username else None
     if key and _is_locked_out(key):
         raise HTTPException(status_code=429, detail="Too many failed login attempts for this account. Try again later.")
 
