@@ -48,10 +48,9 @@ export default function TaskList({
         },
 
         body:JSON.stringify({
-          user_id: task.assignedToId || task.createdById,
+          task_id: task.id,
           text: `${task.title ?? ""} ${task.description ?? ""}`,
           deadline: task.deadline,
-          assigned_by: task.createdById,
         }),
       });
       if (!res.ok) throw new Error(`AI service error: ${res.status}`);

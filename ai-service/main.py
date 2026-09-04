@@ -1,6 +1,7 @@
 import os
 import joblib
 import numpy as np
+from bson import ObjectId
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 from fastapi import Depends, FastAPI, HTTPException
@@ -8,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pymongo import MongoClient
-from auth import require_jwt
+from auth import require_jwt, require_operator_secret
 from schemas import PredictRequest, PredictResponse
 
 load_dotenv()
@@ -100,10 +101,23 @@ def root():
 
 @app.post("/predict", response_model=PredictResponse)
 def predict(body: PredictRequest, _claims: dict = Depends(require_jwt)):
+    if not ObjectId.is_valid(body.task_id):
+        raise HTTPException(status_code=404, detail="Task not found")
+    task = coll.find_one({"_id": ObjectId(body.task_id)})
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    caller_id = _claims.get("sub")
+    created_by = task.get("createdBy")
+    assigned_to = task.get("assignedTo")
+    if caller_id != created_by and caller_id != assigned_to:
+        raise HTTPException(status_code=403, detail="Not authorized to view this task's prediction")
+
     if model is None:
         raise HTTPException(status_code=503, detail="model_unavailable")
-    
-    agg = _user_aggregates(body.user_id)
+
+    target_user_id = assigned_to or created_by
+    agg = _user_aggregates(target_user_id)
 
     #if user has no history, dafault to 0.50 probability
     if agg["user_total_tasks"] == 0:
@@ -116,7 +130,7 @@ def predict(body: PredictRequest, _claims: dict = Depends(require_jwt)):
         "days_until_deadline": days_until_deadline,
         "is_overdue": float(1.0 if days_until_deadline < 0 else 0.0),
         "days_overdue": float(max(-days_until_deadline, 0.0)),
-        "assigned_flag": float(1.0 if body.assigned_by != body.user_id else 0.0),
+        "assigned_flag": float(1.0 if created_by != target_user_id else 0.0),
         "user_total_tasks": agg["user_total_tasks"],
         "user_completion_rate": agg["user_completion_rate"],
         "user_avg_title_len": agg["user_avg_title_len"],
