@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: kafka
-          image: apache/kafka:latest
+          image: apache/kafka:4.3.1
           ports:
             - containerPort: 9092
           env:
@@ -29,7 +29,7 @@ spec:
             - name: KAFKA_CONTROLLER_LISTENER_NAMES
               value: CONTROLLER
             - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
-              value: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+              value: CONTROLLER:PLAINTEXT,PLAINTEXT:SASL_PLAINTEXT
             - name: KAFKA_CONTROLLER_QUORUM_VOTERS
               value: 1@localhost:9093
             - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
@@ -38,3 +38,17 @@ spec:
               value: "1"
             - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
               value: "1"
+            - name: KAFKA_LISTENER_NAME_PLAINTEXT_SASL_ENABLED_MECHANISMS
+              value: PLAIN
+            - name: KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: KAFKA_USERNAME
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: KAFKA_PASSWORD
+            - name: KAFKA_LISTENER_NAME_PLAINTEXT_PLAIN_SASL_JAAS_CONFIG
+              value: org.apache.kafka.common.security.plain.PlainLoginModule required username="$(KAFKA_USERNAME)" password="$(KAFKA_PASSWORD)" user_$(KAFKA_USERNAME)="$(KAFKA_PASSWORD)";

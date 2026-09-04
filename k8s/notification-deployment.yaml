@@ -16,6 +16,9 @@ spec:
         - name: notification-service
           image: notification-service:latest
           imagePullPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
           ports:
             - containerPort: 8085
           readinessProbe:
@@ -27,6 +30,16 @@ spec:
           env:
             - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
               value: kafka:9092
+            - name: KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: KAFKA_USERNAME
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: KAFKA_PASSWORD
             - name: CORS_ALLOWED_ORIGINS
               value: http://sayless.local
             - name: JWT_SECRET

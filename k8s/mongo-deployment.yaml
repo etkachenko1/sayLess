@@ -17,6 +17,17 @@ spec:
           image: mongo:7
           ports:
             - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: MONGO_ROOT_USERNAME
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: MONGO_ROOT_PASSWORD
           volumeMounts:
             - name: mongo-storage
               mountPath: /data/db
