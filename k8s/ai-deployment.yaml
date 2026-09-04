@@ -16,6 +16,9 @@ spec:
         - name: ai-service
           image: ai-service:latest
           imagePullPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
           ports:
             - containerPort: 8000
           env:
@@ -31,3 +34,8 @@ spec:
                 secretKeyRef:
                   name: auth-secret
                   key: JWT_SECRET
+            - name: AI_OPERATOR_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-secret
+                  key: AI_OPERATOR_SECRET

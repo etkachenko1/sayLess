@@ -147,7 +147,7 @@ def predict(body: PredictRequest, _claims: dict = Depends(require_jwt)):
     return PredictResponse(likelihood=float(round(prob, 2)))
 
 @app.post("/train")
-def train_now(_claims: dict = Depends(require_jwt)):
+def train_now(_operator: None = Depends(require_operator_secret)):
     from model.train_model import train  # lazy import
     try:
         train()
