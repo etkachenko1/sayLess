@@ -2,6 +2,7 @@ import json
 import os
 import time
 from collections import defaultdict
+from urllib.parse import unquote
 from fastapi import APIRouter, Request, HTTPException, status, Response
 import httpx
 from dotenv import load_dotenv
@@ -23,14 +24,29 @@ SERVICES = {
 
 _TIMEOUT = httpx.Timeout(25.0)
 
-#retrains and hot-swaps the live model - not something any authenticated user should be able to trigger
-#remotely, so it's kept off the gateway's public route map entirely (direct/internal access only)
 _BLOCKED_ROUTES = {("ai", "train")}
+
+def _is_path_safe(path: str) -> bool:
+    if not path:
+        return True
+    decoded = path
+    for _ in range(10):
+        next_decoded = unquote(decoded)
+        if next_decoded == decoded:
+            break
+        decoded = next_decoded
+    else:
+        return False  # didn't converge within 10 passes, treat as unsafe
+    if "%" in decoded:
+        return False  # residual percent-encoding after fixed-point decode
+    return ".." not in decoded.split("/")
 
 async def forward_request(service_name: str, path: str, request: Request):
     base_url = SERVICES.get(service_name)
     if not base_url:
         raise HTTPException(status_code=404, detail=f"Unknown service '{service_name}'")
+    if not _is_path_safe(path):
+        raise HTTPException(status_code=400, detail="Invalid path")
     if (service_name, path) in _BLOCKED_ROUTES:
         raise HTTPException(status_code=404, detail=f"Unknown service '{service_name}'")
 
