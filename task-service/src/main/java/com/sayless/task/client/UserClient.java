@@ -2,6 +2,8 @@ package com.sayless.task.client;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+import java.net.URI;
 import java.util.Map;
 
 @Component
@@ -17,7 +19,11 @@ public class UserClient {
     public String getUsername(String userId) {
         if(userId == null) return null;
         try {
-            Map <String, Object> user = restTemplate.getForObject(authUrl + "/users/" + userId, Map.class);
+            URI uri = UriComponentsBuilder.fromUriString(authUrl)
+                .path("/users/{id}")
+                .buildAndExpand(userId)
+                .toUri();
+            Map <String, Object> user = restTemplate.getForObject(uri, Map.class);
             if(user!=null && user.get("username")!=null)
                 return user.get("username").toString();
         }
