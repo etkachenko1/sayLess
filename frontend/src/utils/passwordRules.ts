@@ -17,10 +17,13 @@ export function getPasswordRequirements(password: string): PasswordRequirement[]
     { label: `At least ${MIN_PASSWORD_LENGTH} characters`, met: password.length >= MIN_PASSWORD_LENGTH },
     { label: "One uppercase letter", met: /[A-Z]/.test(password) },
     { label: "One number", met: /[0-9]/.test(password) },
-    { label: "Not a commonly used password", met: !COMMON_PASSWORDS.has(password.toLowerCase()) },
   ];
 }
 
+export function isCommonPassword(password: string): boolean {
+  return COMMON_PASSWORDS.has(password.toLowerCase());
+}
+
 export function isPasswordValid(password: string): boolean {
-  return getPasswordRequirements(password).every((r) => r.met);
+  return getPasswordRequirements(password).every((r) => r.met) && !isCommonPassword(password);
 }

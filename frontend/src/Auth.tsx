@@ -2,7 +2,7 @@ import { useState } from "react"
 import type { ChangeEvent } from "react"
 import logo from "./assets/sayless-logo.png"
 import { API_URL } from "./config/api"
-import { getPasswordRequirements, isPasswordValid } from "./utils/passwordRules"
+import { getPasswordRequirements, isCommonPassword, isPasswordValid } from "./utils/passwordRules"
 import { isValidEmail } from "./utils/emailRules"
 
 
@@ -29,8 +29,14 @@ function Auth() {
         password: "",
     })
 
-    const[usernameAvailable, setUsernameAvailable] = useState<boolean|null>(null)
     const [error, setError] = useState<string>("")
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const switchMode = (next: "register" | "login") => {
+        setMode(next)
+        setError("")
+        setSuccessMessage("")
+    }
 
     const handleChangeRegister = (e: ChangeEvent<HTMLInputElement>) =>{
         const {name, value} = e.target //pulls the name and value of the input
@@ -43,14 +49,17 @@ function Auth() {
 
     const [successMessage, setSuccessMessage] = useState<string>("");
     const register = async () => {
+        if (isSubmitting) return
         setError("")
         setSuccessMessage("");
 
         if (!registerForm.username.trim()) { setError("Username is required"); return; }
         if (!registerForm.email.trim()) { setError("Email is required"); return; }
         if (!isValidEmail(registerForm.email)) { setError("Please enter a valid email address"); return; }
+        if (isCommonPassword(registerForm.password)) { setError("This password is too common. Please choose a different one"); return; }
         if (!isPasswordValid(registerForm.password)) { setError("Please meet all the password requirements below"); return; }
 
+        setIsSubmitting(true)
         try {
             //send HTTP Post requesr to backend
             const res = await fetch(`${API_URL}/auth/register`, {
@@ -83,10 +92,15 @@ function Auth() {
             console.error("Register error:", err)
             setError("Something went wrong. Try again later.")
         }
+        finally {
+            setIsSubmitting(false)
+        }
     }
-    
+
     const login = async () => {
+        if (isSubmitting) return
         setError("")
+        setIsSubmitting(true)
         try {
             const res = await fetch(`${API_URL}/auth/login`, {
                 method: "POST",
@@ -101,7 +115,7 @@ function Auth() {
             }
             //check if backend returned a JWT token
             if(data.token) {
-                localStorage.setItem("token", data.token) 
+                localStorage.setItem("token", data.token)
                 window.location.href = "/dashboard"
             } else {
                 setError("Invalid username or password")
@@ -111,19 +125,11 @@ function Auth() {
             console.error("Login error:", err)
             setError("Something went wrong. Please try again later")
         }
+        finally {
+            setIsSubmitting(false)
+        }
     }
 
-    const checkUsername = async (username: string) => {
-      if(!username) return
-      try {
-        const res = await fetch(`${API_URL}/auth/check-username/${username}`)
-        const data = await res.json()
-        setUsernameAvailable(data.available)
-      } catch (e) {
-        console.error("Username check failed: ", e)
-      }
-    }
-    
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900">
       <div className="w-full max-w-md bg-gray-800 rounded-2xl shadow-md p-8 border-gray-700">
@@ -135,7 +141,7 @@ function Auth() {
         {/* Toggle buttons */}
         <div className="flex justify-center mb-6">
           <button
-            onClick={() => setMode("login")}
+            onClick={() => switchMode("login")}
             className={`px-4 py-2 rounded-l-lg font-semibold transition ${
               mode === "login"
                 ? "bg-red-700 text-white"
@@ -145,7 +151,7 @@ function Auth() {
             Sign In
           </button>
           <button
-            onClick={() => setMode("register")}
+            onClick={() => switchMode("register")}
             className={`px-4 py-2 rounded-r-lg font-semibold transition ${
               mode === "register"
                 ? "bg-red-700 text-white"
@@ -188,9 +194,10 @@ function Auth() {
             />
             <button
               onClick={login}
-              className="w-full bg-red-700 hover:bg-red-600 text-white py-2 rounded-lg font-semibold transition"
+              disabled={isSubmitting}
+              className="w-full bg-red-700 hover:bg-red-600 text-white py-2 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In
+              {isSubmitting ? "Signing In..." : "Sign In"}
             </button>
           </>
         )}
@@ -203,12 +210,8 @@ function Auth() {
               placeholder="Username"
               value={registerForm.username}
               onChange={handleChangeRegister}
-              onBlur={() => checkUsername(registerForm.username)}
               className="w-full p-3 mb-3 border border-gray-600 bg-gray-700 rounded-lg focus:ring-2 focus:ring-red-700 text-white placeholder-gray-400"
             />
-
-            {usernameAvailable ==false &&(<p className="text-xs text-red-400 mt-1 mb-2 leading-tight">That username is already taken</p>)}
-            {usernameAvailable ==true &&(<p className="text-xs text-green-400 mt-1 mb-2 leading-tight">That username is available</p>)}
 
             <input
               name="email"
@@ -237,9 +240,10 @@ function Auth() {
             </ul>
             <button
               onClick={register}
-              className="w-full bg-red-700 hover:bg-red-600 text-white py-2 rounded-lg font-semibold transition"
+              disabled={isSubmitting}
+              className="w-full bg-red-700 hover:bg-red-600 text-white py-2 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign Up
+              {isSubmitting ? "Signing Up..." : "Sign Up"}
             </button>
           </>
         )}
