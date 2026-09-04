@@ -177,9 +177,15 @@ export default function Dashboard(){
         }
     }
 
-    const markDone = async ( id: string, currentStatus: string) => {
+    const nextTaskStatus = (currentStatus: string) => {
+        if (currentStatus === "TODO") return "IN_PROGRESS";
+        if (currentStatus === "IN_PROGRESS") return "DONE";
+        return "TODO";
+    }
+
+    const advanceTaskStatus = async ( id: string, currentStatus: string) => {
         setTaskError("");
-        const newStatus = currentStatus === "DONE" ? "TODO": "DONE";
+        const newStatus = nextTaskStatus(currentStatus);
         const res = await fetch (`${API}/tasks/${id}/status`, {
             method: "PATCH",
             headers,
@@ -316,7 +322,7 @@ export default function Dashboard(){
           <TaskList
             tasks={tasks}
             loading={loading}
-            onToggleStatus={markDone}
+            onToggleStatus={advanceTaskStatus}
             onDelete={deleteTask}
             onEdit = {(task) => {
                 setEditingTask(task);

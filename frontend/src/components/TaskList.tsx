@@ -61,6 +61,8 @@ export default function TaskList({
     };
 
   if (tasks.length === 0) return (<div className="text-center text-gray-500 py-6 italic">No tasks, take a break ☕.</div>);
+  const formatStatus = (status: string) => status.replace(/_/g, " ");
+
   const getAccentColor = (status: string) => {
     switch (status) {
       case "DONE":
@@ -128,10 +130,12 @@ return (
                   className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                     t.status === "DONE"
                       ? "bg-green-600/30 text-green-300 border border-green-600/40"
-                      : "bg-yellow-600/20 text-yellow-400 border border-yellow-600/40"
+                      : t.status === "IN_PROGRESS"
+                      ? "bg-yellow-600/20 text-yellow-400 border border-yellow-600/40"
+                      : "bg-gray-600/20 text-gray-400 border border-gray-600/40"
                   }`}
                 >
-                  {t.status}
+                  {formatStatus(t.status)}
                 </span>
                 {overdue && (
                   <span className="flex items-center gap-1 text-xs text-red-400 font-semibold">
@@ -187,12 +191,14 @@ return (
                   onClick={() => onToggleStatus(t.id, t.status)}
                   className={`flex items-center gap-1 text-sm text-white transition-colors px-3 py-1.5 rounded-lg shadow-sm ${
                       t.status === "DONE"
-                      ? "bg-yellow-600/90 hover:bg-yellow-500"
-                      : "bg-green-600/90 hover:bg-green-500"
+                      ? "bg-gray-600/90 hover:bg-gray-500"
+                      : t.status === "IN_PROGRESS"
+                      ? "bg-green-600/90 hover:bg-green-500"
+                      : "bg-yellow-600/90 hover:bg-yellow-500"
                   }`}
                 >
                   <CheckCircle className="h-4 w-4" />{" "}
-                  {t.status === "DONE" ? "Undo" : "Done"}
+                  {t.status === "DONE" ? "Undo" : t.status === "IN_PROGRESS" ? "Finish" : "Start"}
                 </button>
 
                 {t.createdById === myId && (
