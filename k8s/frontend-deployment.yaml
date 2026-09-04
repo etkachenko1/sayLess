@@ -17,4 +17,7 @@ spec:
           image: frontend:latest
           imagePullPolicy: Never
           ports:
-            - containerPort: 80
+            - containerPort: 8080
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false

@@ -134,7 +134,7 @@ services:
         VITE_WS_URL: http://localhost:8085
     container_name: frontend
     ports:
-      - "5173:80"
+      - "5173:8080"
     depends_on:
       - gateway-service
 
