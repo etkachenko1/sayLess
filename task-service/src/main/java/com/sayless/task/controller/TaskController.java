@@ -261,6 +261,23 @@ public class TaskController {
                         saved.getUpdatedAt()
                     )
                 );
+            } else {
+                eventProducer.publishUpdated(
+                    new TaskUpdatedEvent(
+                        saved.getId(),
+                        saved.getTitle(),
+                        saved.getDescription(),
+                        saved.getDeadline(),
+                        saved.getStatus().name(),
+                        saved.getAssignedTo(),
+                        userClient.getUsername(saved.getAssignedTo()),
+                        saved.getCreatedBy(),
+                        userClient.getUsername(saved.getCreatedBy()),
+                        me,
+                        userClient.getUsername(me),
+                        saved.getUpdatedAt()
+                    )
+                );
             }
             return ResponseEntity.ok(saved);
 
