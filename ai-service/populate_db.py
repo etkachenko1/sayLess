@@ -2,7 +2,7 @@
 AI population script
 populate_db.py — Seed MongoDB with synthetic task data for AI model training.
 
-Usage (requires ALLOW_DB_SEEDING=true - refuses to run otherwise, since this
+Usage (requires ALLOW_DB_SEEDING=true, refuses to run otherwise, since this
 inserts real accounts and is only meant for a local/dev database):
     ALLOW_DB_SEEDING=true python populate_db.py           # append data (skips existing usernames)
     ALLOW_DB_SEEDING=true python populate_db.py --clear   # drop users / tasks / friends first

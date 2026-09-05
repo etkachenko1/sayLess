@@ -1,7 +1,14 @@
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
 services:
   mongo:
     image: mongo:7
     container_name: mongo
+    restart: unless-stopped
     ports:
       - "127.0.0.1:27017:27017"
     environment:
@@ -9,10 +16,17 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')", "-u", "${MONGO_ROOT_USERNAME}", "-p", "${MONGO_ROOT_PASSWORD}", "--authenticationDatabase", "admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   kafka:
     image: apache/kafka:4.3.1
     container_name: kafka
+    restart: unless-stopped
     ports:
       - "127.0.0.1:9092:9092"
     environment:
@@ -30,24 +44,37 @@ services:
       KAFKA_LISTENER_NAME_INTERNAL_PLAIN_SASL_JAAS_CONFIG: org.apache.kafka.common.security.plain.PlainLoginModule required username="${KAFKA_USERNAME}" password="${KAFKA_PASSWORD}" user_${KAFKA_USERNAME}="${KAFKA_PASSWORD}";
       KAFKA_LISTENER_NAME_PLAINTEXT_SASL_ENABLED_MECHANISMS: PLAIN
       KAFKA_LISTENER_NAME_PLAINTEXT_PLAIN_SASL_JAAS_CONFIG: org.apache.kafka.common.security.plain.PlainLoginModule required username="${KAFKA_USERNAME}" password="${KAFKA_PASSWORD}" user_${KAFKA_USERNAME}="${KAFKA_PASSWORD}";
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9092'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   auth-service:
     build: ./auth-service
     container_name: auth-service
-    ports:
-      - "8081:8081"
+    restart: unless-stopped
     environment:
       MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/sayless?authSource=admin
       JWT_SECRET: ${JWT_SECRET}
       SERVER_PORT: 8081
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      JAVA_OPTS: ${JAVA_OPTS:-}
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
 
   task-service:
     build: ./task-service
     container_name: task-service
-    ports:
-      - "8082:8082"
+    restart: unless-stopped
     environment:
       MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/sayless?authSource=admin
       JWT_SECRET: ${JWT_SECRET}
@@ -56,16 +83,26 @@ services:
       KAFKA_USERNAME: ${KAFKA_USERNAME}
       KAFKA_PASSWORD: ${KAFKA_PASSWORD}
       AUTH_SERVICE_URL: http://auth-service:8081
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      JAVA_OPTS: ${JAVA_OPTS:-}
     depends_on:
-      - mongo
-      - kafka
-      - auth-service
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
 
   friend-service:
     build: ./friend-service
     container_name: friend-service
-    ports:
-      - "8083:8083"
+    restart: unless-stopped
     environment:
       MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/sayless?authSource=admin
       JWT_SECRET: ${JWT_SECRET}
@@ -74,43 +111,69 @@ services:
       KAFKA_USERNAME: ${KAFKA_USERNAME}
       KAFKA_PASSWORD: ${KAFKA_PASSWORD}
       AUTH_SERVICE_URL: http://auth-service:8081
-      CORS_ALLOWED_ORIGINS: http://localhost:5173
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      JAVA_OPTS: ${JAVA_OPTS:-}
     depends_on:
-      - mongo
-      - kafka
-      - auth-service
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
 
   notification-service:
     build: ./notification-service
     container_name: notification-service
-    ports:
-      - "8085:8085"
+    restart: unless-stopped
     environment:
       MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/sayless?authSource=admin
       JWT_SECRET: ${JWT_SECRET}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       KAFKA_USERNAME: ${KAFKA_USERNAME}
       KAFKA_PASSWORD: ${KAFKA_PASSWORD}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      JAVA_OPTS: ${JAVA_OPTS:-}
     depends_on:
-      - mongo
-      - kafka
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
 
   ai-service:
     build: ./ai-service
     container_name: ai-service
+    restart: unless-stopped
     environment:
       MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/sayless?authSource=admin
       MONGO_DB: sayless
       JWT_SECRET: ${JWT_SECRET}
       AI_OPERATOR_SECRET: ${AI_OPERATOR_SECRET}
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   gateway-service:
     build: ./gateway-service
     container_name: gateway-service
-    ports:
-      - "8080:8080"
+    restart: unless-stopped
     environment:
       JWT_SECRET: ${JWT_SECRET}
       AUTH_SERVICE_URL: http://auth-service:8081/auth
@@ -119,24 +182,69 @@ services:
       AI_SERVICE_URL: http://ai-service:8000
       USERS_SERVICE_URL: http://auth-service:8081/users
       NOTIFICATIONS_SERVICE_URL: http://notification-service:8085/notifications
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      TRUSTED_PROXY_IP: ${TRUSTED_PROXY_IP}
     depends_on:
-      - auth-service
-      - task-service
-      - friend-service
-      - notification-service
-      - ai-service
+      auth-service:
+        condition: service_healthy
+      task-service:
+        condition: service_healthy
+      friend-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   frontend:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: http://localhost:8080
-        VITE_WS_URL: http://localhost:8085
+        VITE_API_URL: https://${DOMAIN}
+        VITE_WS_URL: https://${DOMAIN}
     container_name: frontend
-    ports:
-      - "5173:8080"
+    restart: unless-stopped
     depends_on:
-      - gateway-service
+      gateway-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      default:
+        ipv4_address: 172.28.0.10
+    depends_on:
+      frontend:
+        condition: service_healthy
+      gateway-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
 
 volumes:
   mongo-data:
+  caddy-data:
+  caddy-config:

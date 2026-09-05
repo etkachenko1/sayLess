@@ -17,6 +17,9 @@ interface LoginData {
     password: string
 }
 
+const DEMO_USERNAME = "demo"
+const DEMO_PASSWORD = "Demo12345!"
+
 function Auth() {
     const [mode, setMode] = useState<"register" | "login">("login")
     const [registerForm, setRegisterForm] = useState<RegisterData>({
@@ -130,6 +133,32 @@ function Auth() {
         }
     }
 
+    const loginAsDemo = async () => {
+        if (isSubmitting) return
+        setError("")
+        setIsSubmitting(true)
+        try {
+            const res = await fetch(`${API_URL}/auth/login`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ username: DEMO_USERNAME, password: DEMO_PASSWORD }),
+            })
+            const data = await res.json().catch(() => ({}))
+
+            if(!res.ok || !data.token) {
+                setError("Demo login is unavailable right now.")
+                return
+            }
+            localStorage.setItem("token", data.token)
+            window.location.href = "/dashboard"
+        } catch (err) {
+            console.error("Demo login error:", err)
+            setError("Something went wrong. Please try again later")
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900">
       <div className="w-full max-w-md bg-gray-800 rounded-2xl shadow-md p-8 border-gray-700">
@@ -199,6 +228,16 @@ function Auth() {
             >
               {isSubmitting ? "Signing In..." : "Sign In"}
             </button>
+            <button
+              onClick={loginAsDemo}
+              disabled={isSubmitting}
+              className="w-full mt-2 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Try the demo
+            </button>
+            <p className="text-xs text-gray-400 mt-2 text-center">
+              Includes sample tasks and a connected friend. Open it in two browser tabs to watch a task update sync live between them.
+            </p>
           </>
         )}
 

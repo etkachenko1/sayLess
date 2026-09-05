@@ -35,6 +35,7 @@ public class SecurityConfig {
             }))
             // Authorization rules
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/actuator/health", "/error").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/auth/**").permitAll() // allow public access to /auth/*
                 .requestMatchers(HttpMethod.GET, "/users/**").permitAll()

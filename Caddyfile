@@ -1,0 +1,13 @@
+{$DOMAIN} {
+	@ws {
+		path /ws*
+	}
+	reverse_proxy @ws notification-service:8085
+
+	@api {
+		path /auth* /tasks* /friends* /ai* /notifications* /users*
+	}
+	reverse_proxy @api gateway-service:8080
+
+	reverse_proxy frontend:8080
+}

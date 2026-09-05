@@ -7,6 +7,7 @@ import httpx
 from dotenv import load_dotenv
 from utils.jwt_utils import verify_jwt
 from utils.limiter import limiter
+from utils.client_ip import client_ip as _client_ip
 
 load_dotenv()
 
@@ -92,21 +93,8 @@ _LOGIN_FAILURE_MAX_TRACKED_KEYS = 10_000
 # maxsize is hit
 _login_failures: TTLCache = TTLCache(maxsize=_LOGIN_FAILURE_MAX_TRACKED_KEYS, ttl=_LOGIN_FAILURE_WINDOW_SECONDS)
 
-# only trust X-Forwarded-For when the direct connection comes from this address
-# unset by default so an unconfigured deployment never
-# trusts a client-supplied header for something security-relevant
-_TRUSTED_PROXY_IP = os.getenv("TRUSTED_PROXY_IP")
-
 def _normalize_username(username: str) -> str:
     return username.strip().lower()
-
-def _client_ip(request: Request) -> str:
-    direct_ip = request.client.host if request.client else "unknown"
-    if _TRUSTED_PROXY_IP and direct_ip == _TRUSTED_PROXY_IP:
-        forwarded = request.headers.get("x-forwarded-for")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
-    return direct_ip
 
 def _lockout_key(username: str, request: Request) -> tuple[str, str]:
     return (_normalize_username(username), _client_ip(request))

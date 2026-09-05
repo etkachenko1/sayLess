@@ -1,4 +1,4 @@
 from slowapi import Limiter
-from slowapi.util import get_remote_address
+from utils.client_ip import client_ip
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
+limiter = Limiter(key_func=client_ip, default_limits=["100/minute"])

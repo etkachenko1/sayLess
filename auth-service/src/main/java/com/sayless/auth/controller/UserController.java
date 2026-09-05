@@ -17,6 +17,7 @@ import java.util.Map;
 public class UserController {
     private static final int BIO_MAX_LENGTH = 500;
     private static final int PROFILE_PIC_MAX_LENGTH = 2048;
+    private static final String DEMO_USERNAME = "demo";
 
     private final UserRepository repo;
 
@@ -48,6 +49,9 @@ public class UserController {
         Optional<User> existingOptional = repo.findById(me);
         if(existingOptional.isEmpty()) {
             return ResponseEntity.notFound().build();
+        }
+        if (DEMO_USERNAME.equals(existingOptional.get().getUsername())) {
+            return ResponseEntity.status(403).body(Map.of("error", "The public demo account can't edit its profile"));
         }
 
         if (dto.bio() != null && dto.bio().length() > BIO_MAX_LENGTH) {
