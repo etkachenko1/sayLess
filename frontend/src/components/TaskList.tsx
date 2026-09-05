@@ -178,7 +178,7 @@ return (
                   </span>
                 )}
               </div>
-              {predictions[t.id] !== undefined && (
+              {t.status !== "DONE" && predictions[t.id] !== undefined && (
                 <div className="mt-2 text-sm text-purple-300 font-medium">
                   Probability: {(predictions[t.id] * 100).toFixed(1)}%
                 </div>
@@ -209,11 +209,13 @@ return (
                   <Edit2 className="h-4 w-4"/> Edit
                   </button>
                 )}
+                {t.status !== "DONE" && (
                 <button
                 onClick={() => handlePredict(t)}
                 className="flex items-center gap-1 text-sm text-white bg-purple-600/90 hover:bg-purple-500 transition-colors px-3 py-1.5 rounded-lg shadow-sm"
                 >
                   <Brain className="h-4 w-4" /> Predict </button>
+                )}
               {t.createdById === myId && (
                 <button
                   onClick={() => onDelete(t.id)}

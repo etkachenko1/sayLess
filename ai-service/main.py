@@ -113,6 +113,9 @@ def predict(body: PredictRequest, _claims: dict = Depends(require_jwt)):
     if caller_id != created_by and caller_id != assigned_to:
         raise HTTPException(status_code=403, detail="Not authorized to view this task's prediction")
 
+    if task.get("status") == "DONE":
+        raise HTTPException(status_code=400, detail="Prediction only applies to open tasks")
+
     if model is None:
         raise HTTPException(status_code=503, detail="model_unavailable")
 
