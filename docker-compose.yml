@@ -159,6 +159,8 @@ services:
     environment:
       MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/sayless?authSource=admin
       MONGO_DB: sayless
+      MONGO_TASKS_COLLECTION: tasks
+      MODEL_PATH: model/task_model.pkl
       JWT_SECRET: ${JWT_SECRET}
       AI_OPERATOR_SECRET: ${AI_OPERATOR_SECRET}
     depends_on:
