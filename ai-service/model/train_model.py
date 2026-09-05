@@ -15,10 +15,10 @@ from pymongo import MongoClient
 
 load_dotenv()
 
-MONGO_URI = os.getenv("MONGO_URI")
-DB_NAME = os.getenv("MONGO_DB")
-TASKS_COLL = os.getenv("MONGO_TASKS_COLLECTION")
-MODEL_PATH = os.getenv("MODEL_PATH")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/sayless")
+DB_NAME = os.getenv("MONGO_DB", "sayless")
+TASKS_COLL = os.getenv("MONGO_TASKS_COLLECTION", "tasks")
+MODEL_PATH = os.getenv("MODEL_PATH", "model/task_model.pkl")
 
 def _is_done(status: str) -> int:
     return 1 if status == "DONE" else 0
