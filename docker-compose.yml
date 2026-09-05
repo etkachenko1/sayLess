@@ -45,7 +45,7 @@ services:
       KAFKA_LISTENER_NAME_PLAINTEXT_SASL_ENABLED_MECHANISMS: PLAIN
       KAFKA_LISTENER_NAME_PLAINTEXT_PLAIN_SASL_JAAS_CONFIG: org.apache.kafka.common.security.plain.PlainLoginModule required username="${KAFKA_USERNAME}" password="${KAFKA_PASSWORD}" user_${KAFKA_USERNAME}="${KAFKA_PASSWORD}";
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9092'"]
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/9092'"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -65,7 +65,7 @@ services:
       mongo:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8081/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 18
@@ -93,7 +93,7 @@ services:
       auth-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8082/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 18
@@ -121,7 +121,7 @@ services:
       auth-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8083/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 18
@@ -145,7 +145,7 @@ services:
       kafka:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/actuator/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8085/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 18
@@ -164,7 +164,7 @@ services:
       mongo:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/', timeout=3)\""]
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=3)\""]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -196,7 +196,7 @@ services:
       ai-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8080/', timeout=3)\""]
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/', timeout=3)\""]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -214,7 +214,7 @@ services:
       gateway-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8080/"]
       interval: 10s
       timeout: 5s
       retries: 10

@@ -15,7 +15,8 @@ ARG VITE_WS_URL=http://localhost:8085
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 USER root
-RUN WS_ORIGIN=$(printf '%s' "$VITE_WS_URL" | sed -e 's#^http://#ws://#' -e 's#^https://#wss://#') && \
+RUN apk add --no-cache wget && \
+    WS_ORIGIN=$(printf '%s' "$VITE_WS_URL" | sed -e 's#^http://#ws://#' -e 's#^https://#wss://#') && \
     sed -i "s#__API_ORIGIN__#${VITE_API_URL}#g; s#__WS_ORIGIN__#${WS_ORIGIN}#g" /etc/nginx/conf.d/default.conf
 USER nginx
 EXPOSE 8080
