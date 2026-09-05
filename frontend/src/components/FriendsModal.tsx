@@ -25,6 +25,15 @@ const API = API_URL;
 
 
 export default function FriendsModal({ isOpen, onClose }: FriendsModalProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
   const [friends, setFriends] = useState<Friend[]>([]);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<UserResult[]>([]);
@@ -103,8 +112,9 @@ if (!isOpen) return null;
     friends.some(f => f.requesterId === userId || f.receiverId === userId);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-xl shadow-lg w-full max-w-lg p-6">
+    <div className="fixed inset-0 bg-black bg-opacity-40 z-50 overflow-y-auto">
+      <div className="min-h-full flex items-start justify-center p-4">
+      <div className="bg-gray-800 rounded-xl shadow-lg w-full max-w-lg p-6 my-8">
         <h2 className="text-xl font-bold mb-4 text-center text-red-700">Friends</h2>
 
         <input
@@ -115,7 +125,7 @@ if (!isOpen) return null;
           className="w-full mb-4 p-2 rounded-lg bg-gray-700 text-gray-300 border border-gray-600"
         />
         {searchResults.length > 0 && (
-          <div className="mb-4">
+          <div className="mb-4 max-h-60 overflow-y-auto space-y-2">
             <h3 className="text-sm font-semibold text-blue-400 mb-2">Search Results</h3>
             {searchResults.map((user) => (
               <div key={user.id} className="flex justify-between items-center bg-gray-700 rounded-lg p-2">
@@ -223,6 +233,7 @@ if (!isOpen) return null;
             Close
           </button>
         </div>
+      </div>
       </div>
     </div>
   );
