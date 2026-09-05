@@ -43,7 +43,7 @@ flowchart LR
 | `task-service` | Spring Boot 3.5.6 | 8082 | Task CRUD, assignment, publishes task events to Kafka |
 | `friend-service` | Spring Boot 3.5.6 | 8083 | Friend requests, publishes friend events to Kafka |
 | `notification-service` | Spring Boot 4.1.0 | 8085 | Kafka consumer, persists notifications, pushes over STOMP |
-| `ai-service` | FastAPI + scikit-learn | 8084 | Task-completion likelihood prediction |
+| `ai-service` | FastAPI + scikit-learn | internal only | Task-completion likelihood prediction |
 
 (`notification-service` runs a newer Spring Boot line than the other three. I know that's going to bite me eventually; I just haven't had a reason to align them yet, and I'd rather do it deliberately than as a drive-by while I'm in there for something else.)
 
@@ -75,15 +75,25 @@ Current measured result (5-fold cross-validated, `ai-service/model/metrics.json`
 
 ```bash
 # from the repo root
-echo "JWT_SECRET=$(openssl rand -hex 32)" > .env
+cat <<EOF > .env
+JWT_SECRET=$(openssl rand -hex 32)
+MONGO_ROOT_USERNAME=sayless_admin
+MONGO_ROOT_PASSWORD=$(openssl rand -hex 16)
+KAFKA_USERNAME=sayless_kafka
+KAFKA_PASSWORD=$(openssl rand -hex 16)
+EOF
 docker compose up --build
 ```
+
+Mongo and Kafka both require these credentials to start (see "Notable engineering decisions" below) - `MONGO_URI` for every service is built from `MONGO_ROOT_USERNAME`/`MONGO_ROOT_PASSWORD` directly in `docker-compose.yml`, so there's nothing else to configure. If you're regenerating `.env` for a stack that already has a Mongo volume, Mongo only creates its root user from these values on a *fresh* data directory - run `docker compose down -v` first, or the new credentials won't match what's actually in the database.
 
 Then, once the stack is up, seed the database once (it needs data before the auto-train-on-first-boot step in `ai-service` produces a useful model). Run it inside the container — it already has the dependencies and resolves `mongo` on the Docker network, so nothing extra needs installing on the host:
 
 ```bash
-docker compose exec ai-service python populate_db.py
+docker compose exec -e ALLOW_DB_SEEDING=true ai-service python populate_db.py
 ```
+
+The script refuses to run without `ALLOW_DB_SEEDING=true`, it inserts real accounts with real (freshly-generated, printed once, never stored) passwords, so it's opt-in on purpose rather than something that could run against a real database by accident.
 
 - Frontend: http://localhost:5173
 - Gateway: http://localhost:8080
@@ -92,12 +102,19 @@ docker compose exec ai-service python populate_db.py
 
 ```bash
 minikube start
+MONGO_PW=$(openssl rand -hex 16)
 kubectl create secret generic auth-secret \
   --from-literal=JWT_SECRET=$(openssl rand -hex 32) \
-  --from-literal=MONGO_URI=mongodb://mongo:27017/sayless
+  --from-literal=MONGO_ROOT_USERNAME=sayless_admin \
+  --from-literal=MONGO_ROOT_PASSWORD=$MONGO_PW \
+  --from-literal=MONGO_URI=mongodb://sayless_admin:$MONGO_PW@mongo:27017/sayless?authSource=admin \
+  --from-literal=KAFKA_USERNAME=sayless_kafka \
+  --from-literal=KAFKA_PASSWORD=$(openssl rand -hex 16)
 ./redeploy.ps1   # builds every image and applies k8s/, then rolls out
 minikube tunnel  # needs Administrator on Windows - it's changing the routing table, not binding a low port
 ```
+
+Mongo only creates its root user from `MONGO_ROOT_USERNAME`/`PASSWORD` on a fresh PVC. If you're turning this on for a cluster that already has data, `kubectl delete pvc mongo-pvc` and reseed rather than expecting the new credentials to retrofit an existing volume.
 
 Add `127.0.0.1 sayless.local` to your hosts file — the Ingress routes on that hostname, and the app won't resolve without it. Then visit http://sayless.local.
 
@@ -110,6 +127,14 @@ See [`k8s/secret.example.yaml`](k8s/secret.example.yaml) for the secret's shape 
 **A Kafka deserialization gap silently broke live sync.** From the frontend side, this looked exactly like a WebSocket bug: the socket connected fine, so I spent time checking the bundle and CORS config for something that wasn't there. The actual failure was one hop earlier: after task events started carrying `Instant` fields, `notification-service`'s Kafka `JsonDeserializer` was still using a bare `ObjectMapper` with no JSR-310 module registered, so every event threw `InvalidDefinitionException` before any application code ran. Found by checking the consumer logs directly instead of continuing to assume the socket layer was where the problem lived.
 
 **Docker Compose's WebSocket connection was silently misconfigured, and I only caught it while writing these setup instructions.** The frontend's WebSocket URL fell back to `VITE_API_URL` (the gateway) whenever `VITE_WS_URL` wasn't set, and it never was: not in the Dockerfile, not in `docker-compose.yml`, not in `frontend/.env`. The gateway can't handle a protocol upgrade at all, so live board sync and the notification bell were completely broken in Docker Compose specifically, while working fine through Minikube's Ingress. I'd already written the load-test scripts and measured real throughput and latency numbers against this exact stack without ever noticing, because those scripts talk to `notification-service` directly and never go near the gateway. Found it with a raw WebSocket handshake against the gateway (`404 {"detail":"Unknown service 'ws'"}`) and by grepping the actual served JS bundle, which only referenced the gateway's port. Fixed by wiring a separate `VITE_WS_URL` through the same build-arg path `VITE_API_URL` already used.
+
+## Security: an OWASP Top 10 pass
+
+Ran a structured audit across every service. Found three exploitable issues, all fixed: a path traversal in the gateway that let requests skip the JWT check entirely, an IDOR on the AI service's `/predict` endpoint exposing another user's aggregates, and a public endpoint returning user emails to anyone with a guessable ID. Also closed two infrastructure gaps with nothing standing between an attacker and the data, since MongoDB and Kafka were both running unauthenticated.
+
+One finding validated a decision made for an unrelated reason. The traversal bypass could only ever reach endpoints that were already unauthenticated at the service level, because `/auth/../tasks/...` still hits `task-service`'s own independent `JwtAuthFilter` and gets rejected there. Those duplicated filters, which I'd called out as "not DRY" above, are the reason this didn't go further.
+
+Every finding, what was fixed, and what was deliberately deferred is in `SECURITY_BACKLOG.md`.
 
 ## Known gaps / deliberately deferred
 
