@@ -114,17 +114,17 @@ fi
 if [ "$RESET" = "true" ]; then
   echo "Resetting $DEMO_USERNAME: deleting the tasks it created..."
   curl -s "$BASE_URL/tasks" -H "Authorization: Bearer $DEMO_TOKEN" \
-    | jq -r --arg me "$DEMO_ID" '.[] | select(.createdBy == $me) | .id' \
+    | jq -r --arg me "$DEMO_ID" '.[] | select(.createdById == $me) | .id' \
     | while read -r task_id; do
         curl -s -o /dev/null -X DELETE "$BASE_URL/tasks/$task_id" \
           -H "Authorization: Bearer $DEMO_TOKEN"
       done
-fi
-
-EXISTING_TASKS=$(curl -s "$BASE_URL/tasks" -H "Authorization: Bearer $DEMO_TOKEN" | jq 'length')
-if [ "$EXISTING_TASKS" -gt 0 ]; then
-  echo "$DEMO_USERNAME already has $EXISTING_TASKS tasks - skipping task seeding."
-  exit 0
+else
+  EXISTING_TASKS=$(curl -s "$BASE_URL/tasks" -H "Authorization: Bearer $DEMO_TOKEN" | jq 'length')
+  if [ "$EXISTING_TASKS" -gt 0 ]; then
+    echo "$DEMO_USERNAME already has $EXISTING_TASKS tasks - skipping task seeding."
+    exit 0
+  fi
 fi
 
 echo "Creating demo tasks..."
