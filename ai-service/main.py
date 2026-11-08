@@ -1,3 +1,4 @@
+import logging
 import os
 import joblib
 import numpy as np
@@ -13,6 +14,8 @@ from auth import require_jwt, require_operator_secret
 from schemas import PredictRequest, PredictResponse
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 MONGO_URI  = os.getenv("MONGO_URI", "mongodb://localhost:27017/sayless")
 DB_NAME    = os.getenv("MONGO_DB", "sayless")
@@ -144,8 +147,9 @@ def predict(body: PredictRequest, _claims: dict = Depends(require_jwt)):
     X = np.array([[features[name] for name in feature_names]], dtype=float)
     try:
         prob = model.predict_proba(X)[0, 1]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logger.exception("prediction failed for task %s", body.task_id)
+        raise HTTPException(status_code=500, detail="Prediction failed")
 
     return PredictResponse(likelihood=float(round(prob, 2)))
 
@@ -156,5 +160,6 @@ def train_now(_operator: None = Depends(require_operator_secret)):
         train()
         _load_model_from_disk()
         return {"status": "ok", "message": "Retrained and reloaded"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logger.exception("retrain failed")
+        raise HTTPException(status_code=500, detail="Training failed")
