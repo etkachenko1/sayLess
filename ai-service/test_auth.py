@@ -7,10 +7,14 @@ os.environ.setdefault("MONGO_DB", "sayless")
 os.environ.setdefault("MONGO_TASKS_COLLECTION", "tasks")
 os.environ.setdefault("MODEL_PATH", "model/task_model.pkl")
 
+import logging
+
 from fastapi.testclient import TestClient
+from pymongo.errors import ServerSelectionTimeoutError
 from jose import jwt
 
 import main
+import model.train_model
 from main import app
 
 client = TestClient(app)
@@ -94,3 +98,42 @@ def test_predict_for_a_nonexistent_task_is_404(monkeypatch):
     res = client.post("/predict", json=_predict_body(), headers=_auth_header("user-1"))
 
     assert res.status_code == 404
+
+
+class _ExplodingModel:
+    def predict_proba(self, X):
+        raise ValueError("X has 1 features, but LogisticRegression is expecting 9 features as input")
+
+
+def test_predict_500_does_not_leak_the_raw_exception(monkeypatch, caplog):
+    monkeypatch.setattr(main.coll, "find_one", lambda query: {
+        "createdBy": "creator-id",
+        "assignedTo": "creator-id",
+    })
+    monkeypatch.setattr(main.coll, "find", lambda *args, **kwargs: [{"title": "t", "status": "DONE"}])
+    monkeypatch.setattr(main, "model", _ExplodingModel())
+    monkeypatch.setattr(main, "feature_names", ["text_len"])
+
+    with caplog.at_level(logging.ERROR, logger="main"):
+        res = client.post("/predict", json=_predict_body(), headers=_auth_header("creator-id"))
+
+    assert res.status_code == 500
+    assert res.json() == {"detail": "Prediction failed"}
+    assert "LogisticRegression" not in res.text
+    assert "LogisticRegression is expecting 9 features" in caplog.text
+
+
+def test_train_500_does_not_leak_the_raw_exception(monkeypatch, caplog):
+    def _fail():
+        raise ServerSelectionTimeoutError("mongo:27017: [Errno 111] Connection refused")
+
+    monkeypatch.setattr(model.train_model, "train", _fail)
+
+    with caplog.at_level(logging.ERROR, logger="main"):
+        res = client.post("/train", headers={"X-Operator-Secret": os.environ["AI_OPERATOR_SECRET"]})
+
+    assert res.status_code == 500
+    assert res.json() == {"detail": "Training failed"}
+    assert "27017" not in res.text
+    assert "Connection refused" not in res.text
+    assert "mongo:27017: [Errno 111] Connection refused" in caplog.text

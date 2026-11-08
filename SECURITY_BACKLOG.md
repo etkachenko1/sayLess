@@ -60,6 +60,11 @@ deleting it closes the fast, quiet enumeration path entirely. Registration still
 better for legitimate users, and enumerating through registration is slow and logged in a way the
 dedicated endpoint wasn't.
 
+**Verbose errors from ai-service.** `/predict` and `/train` returned `str(e)` on a 500, echoing raw
+sklearn and pymongo messages (feature counts, Mongo hostnames and ports) back to the caller. Both now
+log the full exception with `logger.exception` and return a generic `Prediction failed` /
+`Training failed` detail.
+
 ## Deferred
 
 **JWT in `localStorage`.** Readable by any JS on the page. The textbook fix is an `HttpOnly` cookie,
@@ -73,9 +78,6 @@ proxy that terminates TLS. Still a real gap if the Minikube path is ever used fo
 
 **No rate limit on `/predict`.** Access is scoped to tasks the caller can see, so the remaining
 concern is someone hammering it across all their tasks to scrape aggregates faster than intended.
-
-**Verbose errors from ai-service.** `/predict` and `/train` return `str(e)` on a 500, echoing raw
-sklearn and pymongo messages back to the caller. Should log server-side and return something generic.
 
 **JJWT pinned to 0.11.5** across the four Java services, using the deprecated
 `parserBuilder()`/`parseClaimsJws()` API. Upgrade to 0.12.x means migrating to
