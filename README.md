@@ -149,5 +149,5 @@ Every finding, what was fixed, and what was deliberately deferred is in [`SECURI
 
 - **Kubernetes isn't the deployed path.** Production is docker-compose behind Caddy on one VPS. The manifests are maintained and run against Minikube, but a managed cluster isn't a cost this project justifies.
 - **Gateway doesn't forward identity.** Each downstream service re-validates the JWT independently rather than trusting a header set by the gateway, so there's duplication across `auth-service`/`task-service`/`friend-service`/`notification-service`'s near-identical JWT filter classes. Not DRY, but each service stays independent.
-- **Test coverage is uneven.** `auth-service` has real regression tests for the auth/IDOR fixes; `task-service`, `friend-service`, and the frontend currently don't have any, and there's no CI pipeline yet.
+- **Test coverage is uneven.** `auth-service` has real regression tests for the auth/IDOR fixes and `task-service` covers task CRUD and its ownership checks; `friend-service` and the frontend currently don't have any, and there's no CI pipeline yet.
 - **No production-grade secrets management.** All services share one `JWT_SECRET` via `.env`/Kubernetes `Secret`: fine for local dev, not for anything with real users.
